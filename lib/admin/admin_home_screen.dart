@@ -1,4 +1,5 @@
 import 'package:cs261_project/admin/add_admin_screen.dart';
+import 'package:cs261_project/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'add_user_screen.dart';
@@ -30,16 +31,34 @@ class AdminHomeScreen extends StatelessWidget {
         ],
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
               ),
-              child: Text(
-                'Hello, ${user?.email ?? 'Admin'}',
-                style: const TextStyle(color: Colors.white, fontSize: 18),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.blueAccent,
+                    radius: 36,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(30),
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => ProfileScreen(),
+                      )),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  Text(
+                    'Hello, ${user?.email ?? 'Admin'}',
+                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                ],
               ),
             ),
             ListTile(
@@ -62,6 +81,7 @@ class AdminHomeScreen extends StatelessWidget {
                 );
               },
             ),
+            const Spacer(),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
