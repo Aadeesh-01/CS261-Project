@@ -1,10 +1,10 @@
 //import 'package:cs261_project/admin/admin_home_screen.dart';
 import 'package:cs261_project/screen/auth.dart';
 //import 'package:cs261_project/screen/home_screen.dart';
-//import 'package:cs261_project/screen/splash_screen.dart';
+import 'package:cs261_project/screen/splash_screen.dart';
 //import 'package:cs261_project/screen/admin_home_screen.dart';
 //import 'package:cs261_project/screen/user_home_screen.dart';
-//import 'package:cs261_project/widget/user_role_dispatcher.dart';
+import 'package:cs261_project/student/user_role_dispatcher.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -33,17 +33,19 @@ class App extends StatelessWidget {
       home: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          /* if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show a splash screen while checking for a logged-in user.
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const SplashScreen();
           }
+
+          // If the snapshot has data, it means a user is logged in.
           if (snapshot.hasData) {
-            // Correct! `snapshot.data` here is a User object.
-            // We pass control to the dispatcher which will handle the database check.
+            // Pass control to your dispatcher to handle user roles.
             return const UserRoleDispatcher();
           }
+
+          // If there's no data, show the authentication screen.
           return const AuthScreen();
-        },*/
-          return AuthScreen();
         },
       ),
     );
