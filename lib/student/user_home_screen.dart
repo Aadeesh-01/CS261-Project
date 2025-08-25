@@ -1,6 +1,5 @@
 // lib/screen/user_home_screen.dart
 import 'package:cs261_project/profile/profile_screen.dart';
-import 'package:cs261_project/screen/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -9,71 +8,73 @@ class UserHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Your existing HomeScreen code can go here
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Welcome Student'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const AuthScreen()),
-                );
-              }
-            },
-          ),
-        ],
+        title: const Text("Welcome Student"),
+        elevation: 2,
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       drawer: Drawer(
         child: Column(
-          mainAxisSize: MainAxisSize.max,
           children: [
-            DrawerHeader(
+            UserAccountsDrawerHeader(
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
               ),
-              child: Column(
-                // mainAxisAlignment: MainAxisAlignment.center, // Centered content
-                // crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.white, // Contrasting color
-                    radius: 36,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(36),
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => const ProfileScreen(),
-                      )),
-                      child: const Icon(Icons.person,
-                          size: 40, color: Colors.blueAccent), // Added an icon
-                    ),
+              currentAccountPicture: GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "User Name", // Placeholder for user's name
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                ],
+                ),
+                child: const CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, size: 40, color: Colors.blueAccent),
+                ),
+              ),
+              accountName: const Text(
+                "User Name",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              ),
+              accountEmail: const Text(
+                "user@email.com", // you can replace this with Firebase user email
+                style: TextStyle(fontSize: 14),
               ),
             ),
-            const Spacer(), // Pushes the logout to the bottom
+            ListTile(
+              leading: const Icon(Icons.home_outlined),
+              title: const Text("Home"),
+              onTap: () {
+                Navigator.pop(context); // just closes the drawer
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text("Profile"),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
+              },
+            ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text("Logout"),
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
-                // Relying on the StreamBuilder is cleaner
               },
             ),
           ],
         ),
       ),
       body: const Center(
-        child: Text("This is the regular user interface."),
+        child: Text(
+          "This is the regular user interface.",
+          style: TextStyle(fontSize: 16),
+        ),
       ),
     );
   }

@@ -15,10 +15,12 @@ class AdminHomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
-        // backgroundColor: Theme.of(context).primaryColor,
+        elevation: 2,
+        backgroundColor: Theme.of(context).primaryColor,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: "Logout",
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {
@@ -32,59 +34,58 @@ class AdminHomeScreen extends StatelessWidget {
       ),
       drawer: Drawer(
         child: Column(
-          mainAxisSize: MainAxisSize.max,
           children: [
-            DrawerHeader(
+            UserAccountsDrawerHeader(
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.blueAccent,
-                    radius: 36,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(30),
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => ProfileScreen(),
-                      )),
-                    ),
+              currentAccountPicture: GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
                   ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-                  Text(
-                    'Hello, ${user?.email ?? 'Admin'}',
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                ],
+                ),
+                child: const CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.admin_panel_settings,
+                      size: 40, color: Colors.blueAccent),
+                ),
+              ),
+              accountName: Text(
+                "Administrator",
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              accountEmail: Text(
+                user?.email ?? "admin@email.com",
+                style: const TextStyle(fontSize: 14),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.person_add),
+              leading: const Icon(Icons.person_add_alt_1_outlined),
               title: const Text('Add User'),
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                      builder: (context) => const AddUserScreen()),
+                    builder: (context) => const AddUserScreen(),
+                  ),
                 );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.admin_panel_settings),
+              leading: const Icon(Icons.admin_panel_settings_outlined),
               title: const Text('Add Admin'),
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                      builder: (context) => const AddAdminScreen()),
+                    builder: (context) => const AddAdminScreen(),
+                  ),
                 );
               },
             ),
-            const Spacer(),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.logout),
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
               title: const Text('Logout'),
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
@@ -99,7 +100,10 @@ class AdminHomeScreen extends StatelessWidget {
         ),
       ),
       body: Center(
-        child: Text('Welcome, ${user?.email ?? 'Admin'}!'),
+        child: Text(
+          'Welcome, ${user?.email ?? 'Admin'}!',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }
