@@ -1,34 +1,60 @@
-// lib/models/profile_model.dart
-class Profile {
-  String name;
-  String rollNo;
-  String interest;
-  String bio;
-  String year;
-  String pictureUrl;
+// profile_model.dart
 
-  Profile({
+// Represents the Firebase Auth user
+class AppUser {
+  final String uid;
+  final String name;
+  final String email;
+  final String? photoUrl;
+
+  AppUser({
+    required this.uid,
     required this.name,
-    required this.rollNo,
-    required this.interest,
-    required this.bio,
-    required this.year,
-    required this.pictureUrl,
+    required this.email,
+    this.photoUrl,
   });
 
-  // Factory method to create Profile from Firestore/Map
-  factory Profile.fromMap(Map<String, dynamic> map) {
+  factory AppUser.fromFirebaseUser(Map<String, dynamic> userData) {
+    return AppUser(
+      uid: userData['uid'] ?? '',
+      name: userData['name'] ?? 'No Name',
+      email: userData['email'] ?? 'No Email',
+      photoUrl: userData['photoUrl'],
+    );
+  }
+}
+
+// Represents the Firestore profile
+class Profile {
+  final String? name;
+  final String? rollNo;
+  final String? interest;
+  final String? bio;
+  final String? year;
+  final String? picture;
+
+  Profile({
+    this.name,
+    this.rollNo,
+    this.interest,
+    this.bio,
+    this.year,
+    this.picture,
+  });
+
+  // Convert from Firestore map -> Profile
+  factory Profile.fromMap(Map<String, dynamic> data) {
     return Profile(
-      name: map['name'] ?? '',
-      rollNo: map['rollNo'] ?? '',
-      interest: map['interest'] ?? '',
-      bio: map['bio'] ?? '',
-      year: map['year'] ?? '',
-      pictureUrl: map['pictureUrl'] ?? '',
+      name: data['name'],
+      rollNo: data['rollNo'],
+      interest: data['interest'],
+      bio: data['bio'],
+      year: data['year'],
+      picture: data['picture'],
     );
   }
 
-  // Convert Profile to Map (for Firestore/JSON)
+  // Convert Profile -> Firestore map
   Map<String, dynamic> toMap() {
     return {
       'name': name,
@@ -36,7 +62,7 @@ class Profile {
       'interest': interest,
       'bio': bio,
       'year': year,
-      'pictureUrl': pictureUrl,
+      'picture': picture,
     };
   }
 }

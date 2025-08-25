@@ -1,8 +1,7 @@
-import 'package:cs261_project/admin/add_admin_screen.dart';
-import 'package:cs261_project/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'add_user_screen.dart';
+import 'package:cs261_project/admin/add_admin_screen.dart';
 import 'package:cs261_project/screen/auth.dart';
 
 class AdminHomeScreen extends StatelessWidget {
@@ -14,95 +13,175 @@ class AdminHomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-        elevation: 2,
-        backgroundColor: Theme.of(context).primaryColor,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: "Logout",
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const AuthScreen()),
-                );
-              }
-            },
-          ),
-        ],
+        title: const Text("Admin Dashboard"),
+        backgroundColor: Colors.blueAccent,
       ),
       drawer: Drawer(
-        child: Column(
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
-              currentAccountPicture: GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                ),
-                child: const CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.admin_panel_settings,
-                      size: 40, color: Colors.blueAccent),
-                ),
-              ),
-              accountName: Text(
-                "Administrator",
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              accountEmail: Text(
-                user?.email ?? "admin@email.com",
-                style: const TextStyle(fontSize: 14),
+              accountName: Text(user?.displayName ?? "Administrator"),
+              accountEmail: Text(user?.email ?? ""),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                backgroundImage: user?.photoURL != null
+                    ? NetworkImage(user!.photoURL!)
+                    : null,
+                child: user?.photoURL == null
+                    ? const Icon(Icons.admin_panel_settings,
+                        size: 40, color: Colors.blueAccent)
+                    : null,
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.person_add_alt_1_outlined),
+              leading: const Icon(Icons.people),
               title: const Text('Add User'),
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const AddUserScreen(),
-                  ),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddUserScreen()),
                 );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.admin_panel_settings_outlined),
+              leading: const Icon(Icons.admin_panel_settings),
               title: const Text('Add Admin'),
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const AddAdminScreen(),
-                  ),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddAdminScreen()),
                 );
               },
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text('Logout'),
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
-                if (context.mounted) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const AuthScreen()),
-                  );
-                }
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AuthScreen()),
+                );
               },
             ),
           ],
         ),
       ),
-      body: Center(
-        child: Text(
-          'Welcome, ${user?.email ?? 'Admin'}!',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 👤 Greeting
+            Text(
+              "Welcome, ${user?.displayName ?? "Admin"}",
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 📊 Stats Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStatCard("Users", "120", Icons.people, Colors.green),
+                _buildStatCard("Admins", "5", Icons.security, Colors.blue),
+                _buildStatCard(
+                    "Pending", "8", Icons.hourglass_bottom, Colors.orange),
+              ],
+            ),
+            const SizedBox(height: 30),
+
+            // ⚡ Quick Actions
+            const Text(
+              "Quick Actions",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              children: [
+                _buildActionCard(
+                  context,
+                  "Add User",
+                  Icons.person_add,
+                  Colors.green,
+                  const AddUserScreen(),
+                ),
+                _buildActionCard(
+                  context,
+                  "Add Admin",
+                  Icons.admin_panel_settings,
+                  Colors.blue,
+                  const AddAdminScreen(),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 📌 Reusable Stat Card
+  Widget _buildStatCard(
+      String title, String count, IconData icon, Color color) {
+    return Expanded(
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Icon(icon, size: 30, color: color),
+              const SizedBox(height: 10),
+              Text(
+                count,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(title, style: const TextStyle(fontSize: 14)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 📌 Reusable Action Card
+  Widget _buildActionCard(BuildContext context, String title, IconData icon,
+      Color color, Widget screen) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => screen),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: color),
+              const SizedBox(height: 10),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w500)),
+            ],
+          ),
         ),
       ),
     );

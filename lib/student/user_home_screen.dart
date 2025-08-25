@@ -1,13 +1,14 @@
-// lib/screen/user_home_screen.dart
-import 'package:cs261_project/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../profile/profile_screen.dart';
 
 class UserHomeScreen extends StatelessWidget {
   const UserHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Welcome Student"),
@@ -22,41 +23,54 @@ class UserHomeScreen extends StatelessWidget {
                 color: Theme.of(context).primaryColor,
               ),
               currentAccountPicture: GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                ),
-                child: const CircleAvatar(
+                onTap: () {
+                  if (user != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ProfileScreen(uid: user.uid),
+                      ),
+                    );
+                  }
+                },
+                child: CircleAvatar(
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.person, size: 40, color: Colors.blueAccent),
+                  backgroundImage: user?.photoURL != null
+                      ? NetworkImage(user!.photoURL!)
+                      : null,
+                  child: user?.photoURL == null
+                      ? const Icon(Icons.person,
+                          size: 40, color: Colors.blueAccent)
+                      : null,
                 ),
               ),
-              accountName: const Text(
-                "User Name",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              accountName: Text(
+                user?.displayName ?? "User Name",
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
               ),
-              accountEmail: const Text(
-                "user@email.com", // you can replace this with Firebase user email
-                style: TextStyle(fontSize: 14),
+              accountEmail: Text(
+                user?.email ?? "user@email.com",
+                style: const TextStyle(fontSize: 14),
               ),
             ),
             ListTile(
               leading: const Icon(Icons.home_outlined),
               title: const Text("Home"),
               onTap: () {
-                Navigator.pop(context); // just closes the drawer
+                Navigator.pop(context);
               },
             ),
             ListTile(
               leading: const Icon(Icons.person_outline),
               title: const Text("Profile"),
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
+                if (user != null) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ProfileScreen(uid: user.uid),
+                    ),
+                  );
+                }
               },
             ),
             const Divider(),
