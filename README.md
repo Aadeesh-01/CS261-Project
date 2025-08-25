@@ -16,9 +16,9 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 
 Created by:
-Aadeesh Surana \n
-Lokesh Prajapat \n
-Nitin Raj Singh \n
-Mehul Mehra \n
-Archan Dave \n
+Aadeesh Surana,
+Lokesh Prajapat, 
+Nitin Raj Singh, 
+Mehul Mehra, 
+Archan Dave and
 Ayush Bagdai
