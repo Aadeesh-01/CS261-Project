@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'add_user_screen.dart';
+import 'admin_add_user_screen.dart';
 import 'package:cs261_project/admin/add_admin_screen.dart';
 import 'package:cs261_project/screen/auth.dart';
 
@@ -40,7 +40,7 @@ class AdminHomeScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const AddUserScreen()),
+                  MaterialPageRoute(builder: (_) => const AdminAddUserScreen()),
                 );
               },
             ),
@@ -114,7 +114,7 @@ class AdminHomeScreen extends StatelessWidget {
                   "Add User",
                   Icons.person_add,
                   Colors.green,
-                  const AddUserScreen(),
+                  const AdminAddUserScreen(),
                 ),
                 _buildActionCard(
                   context,

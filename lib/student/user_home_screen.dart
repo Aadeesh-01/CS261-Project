@@ -1,13 +1,33 @@
+import 'package:cs261_project/screen/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../profile/profile_screen.dart';
+import 'package:liquid_swipe/liquid_swipe.dart';
 
-class UserHomeScreen extends StatelessWidget {
+import 'package:cs261_project/profile/profile_screen.dart';
+import 'package:cs261_project/screen/main_home_screen.dart'; // The home screen we just created
+
+class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
 
   @override
+  State<UserHomeScreen> createState() => _UserHomeScreenState();
+}
+
+class _UserHomeScreenState extends State<UserHomeScreen> {
+  @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: Text("User not found.")),
+      );
+    }
+
+    final pages = [
+      const MainHomeScreen(),
+      const ProfileScreen(), // 👈 only ProfileScreen here
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -22,34 +42,22 @@ class UserHomeScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
               ),
-              currentAccountPicture: GestureDetector(
-                onTap: () {
-                  if (user != null) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => ProfileScreen(uid: user.uid),
-                      ),
-                    );
-                  }
-                },
-                child: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  backgroundImage: user?.photoURL != null
-                      ? NetworkImage(user!.photoURL!)
-                      : null,
-                  child: user?.photoURL == null
-                      ? const Icon(Icons.person,
-                          size: 40, color: Colors.blueAccent)
-                      : null,
-                ),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                backgroundImage:
+                    user.photoURL != null ? NetworkImage(user.photoURL!) : null,
+                child: user.photoURL == null
+                    ? const Icon(Icons.person,
+                        size: 40, color: Colors.blueAccent)
+                    : null,
               ),
               accountName: Text(
-                user?.displayName ?? "User Name",
+                user.displayName ?? "User Name",
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
               ),
               accountEmail: Text(
-                user?.email ?? "user@email.com",
+                user.email ?? "user@email.com",
                 style: const TextStyle(fontSize: 14),
               ),
             ),
@@ -64,13 +72,11 @@ class UserHomeScreen extends StatelessWidget {
               leading: const Icon(Icons.person_outline),
               title: const Text("Profile"),
               onTap: () {
-                if (user != null) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => ProfileScreen(uid: user.uid),
-                    ),
-                  );
-                }
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
               },
             ),
             const Divider(),
@@ -79,16 +85,20 @@ class UserHomeScreen extends StatelessWidget {
               title: const Text("Logout"),
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  builder: (context) => const AuthScreen(),
+                ));
               },
             ),
           ],
         ),
       ),
-      body: const Center(
-        child: Text(
-          "This is the regular user interface.",
-          style: TextStyle(fontSize: 16),
-        ),
+      body: LiquidSwipe(
+        pages: pages,
+        enableLoop: false,
+        waveType: WaveType.liquidReveal,
+        slideIconWidget:
+            const Icon(Icons.arrow_back_ios, color: Colors.blueGrey),
       ),
     );
   }

@@ -1,106 +1,130 @@
+//import 'package:cs261_project/student/user_home_screen.dart';
 import 'package:flutter/material.dart';
-import 'profile_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'profile_service.dart';
+import 'profile_model.dart';
+import 'profile_edit_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final String uid; // Current user UID
-
-  const ProfileScreen({super.key, required this.uid});
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
   final ProfileService _profileService = ProfileService();
-
-  final TextEditingController nameCtrl = TextEditingController();
-  final TextEditingController rollCtrl = TextEditingController();
-  final TextEditingController interestCtrl = TextEditingController();
-  final TextEditingController bioCtrl = TextEditingController();
-  final TextEditingController yearCtrl = TextEditingController();
-  final TextEditingController pictureCtrl = TextEditingController();
+  bool _isLoading = true;
+  Profile? _profile;
+  late final String uid;
 
   @override
   void initState() {
     super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+    uid = user.uid;
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
-    final profile = await _profileService.getProfile(widget.uid);
-    if (profile != null) {
+    final profile = await _profileService.getProfile(uid);
+    if (mounted) {
       setState(() {
-        nameCtrl.text = profile.name ?? '';
-        rollCtrl.text = profile.rollNo ?? '';
-        interestCtrl.text = profile.interest ?? '';
-        bioCtrl.text = profile.bio ?? '';
-        yearCtrl.text = profile.year ?? '';
-        pictureCtrl.text = profile.picture ?? '';
+        _profile = profile;
+        _isLoading = false;
       });
     }
   }
 
-  Future<void> _saveProfile() async {
-    if (_formKey.currentState!.validate()) {
-      final profile = Profile(
-        name: nameCtrl.text,
-        rollNo: rollCtrl.text,
-        interest: interestCtrl.text,
-        bio: bioCtrl.text,
-        year: yearCtrl.text,
-        picture: pictureCtrl.text,
-      );
-      await _profileService.saveProfile(widget.uid, profile);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile Saved!')),
-      );
-    }
+  void _showImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.all(10),
+        child: InteractiveViewer(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(imageUrl, fit: BoxFit.contain),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Profile")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              TextFormField(
-                controller: rollCtrl,
-                decoration: const InputDecoration(labelText: 'Roll No'),
-              ),
-              TextFormField(
-                controller: interestCtrl,
-                decoration: const InputDecoration(labelText: 'Interest'),
-              ),
-              TextFormField(
-                controller: bioCtrl,
-                decoration: const InputDecoration(labelText: 'Bio'),
-              ),
-              TextFormField(
-                controller: yearCtrl,
-                decoration: const InputDecoration(labelText: 'Year'),
-              ),
-              TextFormField(
-                controller: pictureCtrl,
-                decoration: const InputDecoration(labelText: 'Picture URL'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _saveProfile,
-                child: const Text("Save"),
-              ),
-            ],
-          ),
-        ),
+      appBar: AppBar(
+        title: const Text("My Profile"),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () async {
+              final updated = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProfileEditScreen(),
+                ),
+              );
+              if (updated == true) _loadProfile();
+            },
+          )
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _profile == null
+              ? const Center(child: Text("No profile found"))
+              : ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    Center(
+                      child: GestureDetector(
+                        onTap: _profile!.picture != null
+                            ? () => _showImageDialog(_profile!.picture!)
+                            : null,
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundImage: _profile!.picture != null
+                              ? NetworkImage(_profile!.picture!)
+                              : null,
+                          backgroundColor: Colors.blueGrey,
+                          child: _profile!.picture == null
+                              ? const Icon(Icons.person,
+                                  size: 70, color: Colors.white)
+                              : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: Text(
+                        _profile!.name ?? "Unnamed",
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    _infoTile("Roll No", _profile!.rollNo),
+                    _infoTile("Year", _profile!.year),
+                    _infoTile("Interests", _profile!.interest),
+                    _infoTile("Bio", _profile!.bio),
+                  ],
+                ),
+    );
+  }
+
+  Widget _infoTile(String title, String? value) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(value ?? "Not provided"),
       ),
     );
   }
