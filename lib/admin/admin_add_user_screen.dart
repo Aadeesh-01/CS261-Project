@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_functions/cloud_functions.dart'; // 👈 1. ADD THIS IMPORT
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -17,7 +17,6 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
 
   bool _isLoading = false;
 
-  // 2. ADD THIS METHOD TO PREVENT MEMORY LEAKS
   @override
   void dispose() {
     _nameController.dispose();
@@ -27,9 +26,9 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
   }
 
   Future<void> _createUser() async {
-    String name = _nameController.text.trim();
-    String email = _emailController.text.trim();
-    String password = _passwordController.text.trim();
+    final String name = _nameController.text.trim();
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
 
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -41,10 +40,12 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // This line will now work correctly because of the added import.
+      // Get a reference to the Cloud Function in the correct region
       final HttpsCallable callable =
-          FirebaseFunctions.instance.httpsCallable('createUserAccount');
+          FirebaseFunctions.instanceFor(region: 'us-central1')
+              .httpsCallable('createUserAccount');
 
+      // Call the function with the user's data
       await callable.call<Map<String, dynamic>>({
         "name": name,
         "email": email,
@@ -53,15 +54,34 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("✅ User created successfully via Cloud Function")),
+          content: Text("✅ User created successfully!"),
+          backgroundColor: Colors.green,
+        ),
       );
 
       _nameController.clear();
       _emailController.clear();
       _passwordController.clear();
-    } catch (e) {
+    } on FirebaseFunctionsException catch (e) {
+      // This provides detailed error feedback to the admin
+      print('--- DETAILED FIREBASE FUNCTIONS ERROR ---');
+      print('Code: ${e.code}');
+      print('Message: ${e.message}');
+      print('Details: ${e.details}');
+      print('-----------------------------------------');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Error: ${e.toString()}")),
+        SnackBar(
+          content: Text('ERROR (${e.code}): ${e.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      // Catches any other unexpected errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("An unexpected error occurred: ${e.toString()}"),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -78,15 +98,21 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: "Name"),
+              decoration: const InputDecoration(
+                  labelText: "Name", border: OutlineInputBorder()),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: "Email"),
+              decoration: const InputDecoration(
+                  labelText: "Email", border: OutlineInputBorder()),
+              keyboardType: TextInputType.emailAddress,
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: _passwordController,
-              decoration: const InputDecoration(labelText: "Password"),
+              decoration: const InputDecoration(
+                  labelText: "Password", border: OutlineInputBorder()),
               obscureText: true,
             ),
             const SizedBox(height: 20),
@@ -94,6 +120,10 @@ class _AdminAddUserScreenState extends State<AdminAddUserScreen> {
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
                     onPressed: _createUser,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 50, vertical: 15),
+                    ),
                     child: const Text("Add User"),
                   ),
           ],

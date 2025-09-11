@@ -1,9 +1,8 @@
-//import 'package:cs261_project/student/user_home_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:cs261_project/profile/profile_edit_screen.dart';
+import 'package:cs261_project/profile/profile_model.dart';
+import 'package:cs261_project/profile/profile_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'profile_service.dart';
-import 'profile_model.dart';
-import 'profile_edit_screen.dart';
+import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,22 +15,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ProfileService _profileService = ProfileService();
   bool _isLoading = true;
   Profile? _profile;
-  late final String uid;
+  String? _userDocumentId;
 
   @override
   void initState() {
     super.initState();
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      Navigator.of(context).pop();
-      return;
-    }
-    uid = user.uid;
-    _loadProfile();
+    _loadInitialData();
   }
 
-  Future<void> _loadProfile() async {
-    final profile = await _profileService.getProfile(uid);
+  Future<void> _loadInitialData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+
+    final docId = await _profileService.getProfileDocumentIdByUid(user.uid);
+
+    if (docId != null) {
+      if (mounted) {
+        setState(() {
+          _userDocumentId = docId;
+        });
+      }
+      await _loadProfile(docId);
+    } else {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _loadProfile(String docId) async {
+    final profile = await _profileService.getProfile(docId);
     if (mounted) {
       setState(() {
         _profile = profile;
@@ -65,13 +83,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () async {
-              final updated = await Navigator.push(
+              if (_userDocumentId == null) return;
+
+              final updated = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const ProfileEditScreen(),
+                  builder: (_) =>
+                      ProfileEditScreen(userDocumentId: _userDocumentId!),
                 ),
               );
-              if (updated == true) _loadProfile();
+
+              if (updated == true && _userDocumentId != null) {
+                if (mounted) {
+                  setState(() => _isLoading = true);
+                  _loadProfile(_userDocumentId!);
+                }
+              }
             },
           )
         ],
@@ -79,7 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _profile == null
-              ? const Center(child: Text("No profile found"))
+              ? const Center(child: Text("No profile data found."))
               : ListView(
                   padding: const EdgeInsets.all(24),
                   children: [
@@ -124,7 +151,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(value ?? "Not provided"),
+        subtitle:
+            Text(value != null && value.isNotEmpty ? value : "Not provided"),
       ),
     );
   }

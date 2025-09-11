@@ -1,14 +1,8 @@
-//import 'package:cs261_project/admin/admin_home_screen.dart';
 import 'package:cs261_project/screen/auth.dart';
-//import 'package:cs261_project/screen/home_screen.dart';
 import 'package:cs261_project/screen/splash_screen.dart';
-//import 'package:cs261_project/screen/admin_home_screen.dart';
-//import 'package:cs261_project/screen/user_home_screen.dart';
 import 'package:cs261_project/student/user_role_dispatcher.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -24,7 +18,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FlutterChat',
+      title: 'Alumni Connect',
       theme: ThemeData().copyWith(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color.fromARGB(255, 63, 17, 177),
@@ -33,18 +27,14 @@ class App extends StatelessWidget {
       home: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // Show a splash screen while checking for a logged-in user.
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const SplashScreen();
           }
-
-          // If the snapshot has data, it means a user is logged in.
           if (snapshot.hasData) {
-            // Pass control to your dispatcher to handle user roles.
+            // If you have a pass, go to the security desk.
             return const UserRoleDispatcher();
           }
-
-          // If there's no data, show the authentication screen.
+          // If not, go to the login screen.
           return const AuthScreen();
         },
       ),

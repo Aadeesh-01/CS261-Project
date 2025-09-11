@@ -1,3 +1,4 @@
+import 'package:cs261_project/admin/button.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'admin_add_user_screen.dart';
@@ -51,6 +52,19 @@ class AdminHomeScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const AddAdminScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings),
+              title: const Text('MAKE Admin'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const MakeAdminButton(
+                            emailToMakeAdmin: "admin@example.com",
+                          )),
                 );
               },
             ),

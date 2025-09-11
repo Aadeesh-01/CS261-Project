@@ -8,9 +8,9 @@ import 'package:image_picker/image_picker.dart';
 import 'profile_model.dart';
 import 'profile_service.dart';
 
-// Renamed from ProfileScreen to ProfileEditScreen for clarity
 class ProfileEditScreen extends StatefulWidget {
-  const ProfileEditScreen({super.key});
+  final String userDocumentId;
+  const ProfileEditScreen({super.key, required this.userDocumentId});
 
   @override
   State<ProfileEditScreen> createState() => _ProfileEditScreenState();
@@ -29,27 +29,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   bool _isLoading = true;
   bool _isUploading = false;
   String? _profilePicUrl;
-  late final String uid;
 
   @override
   void initState() {
     super.initState();
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      // It's safer to schedule the pop for after the build phase
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
-      });
-      return;
-    }
-    uid = user.uid;
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
-    final profile = await _profileService.getProfile(uid);
+    final profile = await _profileService.getProfile(widget.userDocumentId);
     if (profile != null && mounted) {
       setState(() {
         nameCtrl.text = profile.name ?? '';
@@ -77,13 +65,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       File file = File(pickedFile.path);
       final user = FirebaseAuth.instance.currentUser!;
 
-      // Upload to Firebase Storage
       final storageRef = FirebaseStorage.instance
           .ref('profile_pictures/${user.uid}/avatar.jpg');
       await storageRef.putFile(file);
       final downloadUrl = await storageRef.getDownloadURL();
 
-      // Update local UI state
       if (mounted) {
         setState(() {
           _profilePicUrl = downloadUrl;
@@ -118,7 +104,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           picture: _profilePicUrl,
         );
 
-        await _profileService.saveProfile(uid, profile);
+        await _profileService.saveProfile(widget.userDocumentId, profile);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -127,8 +113,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          // Navigate back and pass 'true' to indicate a successful update.
-          Navigator.pop(context, true);
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context, true);
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -213,10 +200,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Edit Profile"),
+        title: const Text("Complete Your Profile"),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.black,
+        automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
