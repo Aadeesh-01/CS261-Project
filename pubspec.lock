@@ -9,6 +9,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.60"
+  algolia_client_core:
+    dependency: transitive
+    description:
+      name: algolia_client_core
+      sha256: "46a13b2b3b25eb1d7d6850e2018e3865704b956a033e78aafd2b892605bfd1f1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.36.1"
+  algolia_client_insights:
+    dependency: transitive
+    description:
+      name: algolia_client_insights
+      sha256: c69513aaf1de0699ddce5e350fa25e35f2a943a8e22c3c95058e3fa6c98c7e55
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.36.1"
+  algolia_client_search:
+    dependency: transitive
+    description:
+      name: algolia_client_search
+      sha256: "80e59c703940602f8c85288a624c2fb28b68cdbcde18501e4f6bdba4206a4b71"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.36.1"
+  algoliasearch:
+    dependency: "direct main"
+    description:
+      name: algoliasearch
+      sha256: "2feeff39d993817be23f75f688f0511cce4979e70ac0cf6ea6c0113c6a00dc9c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.36.1"
   async:
     dependency: transitive
     description:
@@ -113,6 +145,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
+  dio:
+    dependency: transitive
+    description:
+      name: dio
+      sha256: d90ee57923d1828ac14e492ca49440f65477f4bb1263575900be731a3dac66a9
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.9.0"
+  dio_web_adapter:
+    dependency: transitive
+    description:
+      name: dio_web_adapter
+      sha256: "7586e476d70caecaf1686d21eee7247ea43ef5c345eab9e0cc3583ff13378d78"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.1"
   fake_async:
     dependency: transitive
     description:
@@ -360,6 +408,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.1+1"
+  json_annotation:
+    dependency: transitive
+    description:
+      name: json_annotation
+      sha256: "1ce844379ca14835a50d2f019a3099f419082cfdd231cd86a142af94dd5c6bb1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.9.0"
   leak_tracker:
     dependency: transitive
     description:

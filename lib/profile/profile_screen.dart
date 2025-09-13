@@ -32,24 +32,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    final docId = await _profileService.getProfileDocumentIdByUid(user.uid);
+    final uid = user.uid;
+    _userDocumentId = uid;
 
-    if (docId != null) {
-      if (mounted) {
-        setState(() {
-          _userDocumentId = docId;
-        });
-      }
-      await _loadProfile(docId);
-    } else {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    await _loadProfile(uid);
   }
 
-  Future<void> _loadProfile(String docId) async {
-    final profile = await _profileService.getProfile(docId);
+  Future<void> _loadProfile(String uid) async {
+    final profile = await _profileService.getProfile(uid);
     if (mounted) {
       setState(() {
         _profile = profile;
@@ -96,7 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (updated == true && _userDocumentId != null) {
                 if (mounted) {
                   setState(() => _isLoading = true);
-                  _loadProfile(_userDocumentId!);
+                  await _loadProfile(_userDocumentId!);
                 }
               }
             },

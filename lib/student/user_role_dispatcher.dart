@@ -1,40 +1,10 @@
+import 'package:cs261_project/admin/admin_home_screen.dart';
 import 'package:cs261_project/profile/profile_edit_screen.dart';
 import 'package:cs261_project/profile/profile_model.dart';
 import 'package:cs261_project/profile/profile_service.dart';
+import 'package:cs261_project/student/user_home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-// --- Placeholder Screens ---
-class AdminHomeScreen extends StatelessWidget {
-  const AdminHomeScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Admin Dashboard"), actions: [
-        IconButton(
-            onPressed: () => FirebaseAuth.instance.signOut(),
-            icon: const Icon(Icons.logout))
-      ]),
-      body: const Center(child: Text("Welcome, Admin!")),
-    );
-  }
-}
-
-class StudentHomeScreen extends StatelessWidget {
-  const StudentHomeScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Student Home"), actions: [
-        IconButton(
-            onPressed: () => FirebaseAuth.instance.signOut(),
-            icon: const Icon(Icons.logout))
-      ]),
-      body: const Center(child: Text("Welcome, Student!")),
-    );
-  }
-}
-// -------------------------
 
 class UserRoleDispatcher extends StatefulWidget {
   const UserRoleDispatcher({super.key});
@@ -50,10 +20,6 @@ class _UserRoleDispatcherState extends State<UserRoleDispatcher> {
   @override
   void initState() {
     super.initState();
-    _setupProfileStream();
-  }
-
-  void _setupProfileStream() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       _profileStream = _profileService.getProfileStreamByUid(user.uid);
@@ -83,42 +49,28 @@ class _UserRoleDispatcherState extends State<UserRoleDispatcher> {
           );
         }
 
-        // ** THE FIX IS HERE **
-        // If a user is authenticated but has no profile document,
-        // it's an invalid state. Sign them out.
         if (!snapshot.hasData || snapshot.data == null) {
-          // We use a post-frame callback to safely call signOut after the build.
+          // User exists in Auth but no Firestore data → sign out
           WidgetsBinding.instance.addPostFrameCallback((_) {
             FirebaseAuth.instance.signOut();
           });
-
-          // Show a loading indicator while the sign-out is processing.
           return const Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Inconsistent data found. Signing out..."),
-                  SizedBox(height: 10),
-                  CircularProgressIndicator(),
-                ],
-              ),
-            ),
+            body: Center(child: Text("Inconsistent data. Signing out...")),
           );
         }
 
         final profile = snapshot.data!;
-        final docId = profile.docId!;
 
-        // --- THE GATEKEEPER LOGIC ---
+        // Gatekeeper 1: Force profile completion
         if (profile.isProfileComplete != true) {
-          return ProfileEditScreen(userDocumentId: docId);
+          return ProfileEditScreen(userDocumentId: profile.docId!);
         }
 
+        // Gatekeeper 2: Route based on role
         if (profile.role == 'admin') {
           return const AdminHomeScreen();
         } else {
-          return const StudentHomeScreen();
+          return const UserHomeScreen();
         }
       },
     );

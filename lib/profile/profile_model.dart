@@ -1,49 +1,54 @@
 class Profile {
   final String? docId;
+  final String? uid;
   final String? name;
   final String? rollNo;
+  final String? year;
   final String? interest;
   final String? bio;
-  final String? year;
   final String? picture;
   final String? role;
-  final bool? isProfileComplete;
+  final bool isProfileComplete;
 
   Profile({
     this.docId,
+    this.uid,
     this.name,
     this.rollNo,
+    this.year,
     this.interest,
     this.bio,
-    this.year,
     this.picture,
     this.role,
-    this.isProfileComplete,
+    this.isProfileComplete = false,
   });
 
-  factory Profile.fromJson(Map<String, dynamic> json, String documentId) {
+  factory Profile.fromJson(Map<String, dynamic> json, String docId) {
     return Profile(
-      docId: documentId,
+      docId: docId,
+      uid: json['uid'],
       name: json['name'],
       rollNo: json['rollNo'],
+      year: json['year'],
       interest: json['interest'],
       bio: json['bio'],
-      year: json['year'],
       picture: json['picture'],
       role: json['role'],
-      isProfileComplete: json['isProfileComplete'],
+      isProfileComplete: json['isProfileComplete'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'uid': uid,
       'name': name,
       'rollNo': rollNo,
+      'year': year,
       'interest': interest,
       'bio': bio,
-      'year': year,
       'picture': picture,
-      'isProfileComplete': true,
+      'role': role,
+      'isProfileComplete': isProfileComplete,
     };
   }
 }

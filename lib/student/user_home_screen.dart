@@ -1,4 +1,5 @@
 import 'package:cs261_project/screen/auth.dart';
+import 'package:cs261_project/search/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:liquid_swipe/liquid_swipe.dart';
@@ -27,6 +28,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     final pages = [
       const MainHomeScreen(),
       const ProfileScreen(), // 👈 only ProfileScreen here
+      const SearchScreen(),
     ];
 
     return Scaffold(

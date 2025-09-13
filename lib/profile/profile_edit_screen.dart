@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:cs261_project/profile/profile_model.dart';
+import 'package:cs261_project/profile/profile_service.dart';
+import 'package:cs261_project/student/user_home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
-import 'profile_model.dart';
-import 'profile_service.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   final String userDocumentId;
@@ -55,7 +55,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Future<void> _pickAndUploadImage(ImageSource source) async {
     try {
-      if (mounted) setState(() => _isUploading = true);
+      setState(() => _isUploading = true);
 
       final picker = ImagePicker();
       final pickedFile =
@@ -70,25 +70,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       await storageRef.putFile(file);
       final downloadUrl = await storageRef.getDownloadURL();
 
-      if (mounted) {
-        setState(() {
-          _profilePicUrl = downloadUrl;
-        });
-      }
+      setState(() {
+        _profilePicUrl = downloadUrl;
+      });
     } catch (e) {
-      print("Failed to pick/upload image: $e");
+      print("Failed to upload image: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Failed to upload image. Please try again."),
-            backgroundColor: Colors.red,
-          ),
+              content: Text("Image upload failed."),
+              backgroundColor: Colors.red),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
+      if (mounted) setState(() => _isUploading = false);
     }
   }
 
@@ -96,34 +91,31 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (_formKey.currentState!.validate()) {
       try {
         final profile = Profile(
-          name: nameCtrl.text,
-          rollNo: rollCtrl.text,
-          interest: interestCtrl.text,
-          bio: bioCtrl.text,
-          year: yearCtrl.text,
+          name: nameCtrl.text.trim(),
+          rollNo: rollCtrl.text.trim(),
+          interest: interestCtrl.text.trim(),
+          bio: bioCtrl.text.trim(),
+          year: yearCtrl.text.trim(),
           picture: _profilePicUrl,
+          isProfileComplete: true, // ✅ Mark as complete
         );
 
         await _profileService.saveProfile(widget.userDocumentId, profile);
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile Saved!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context, true);
-          }
-        }
+        if (!mounted) return;
+
+        // ✅ Navigate to UserHomeScreen
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const UserHomeScreen()),
+          (route) => false,
+        );
       } catch (e) {
+        print("Save error: $e");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("Couldn't save profile. Please try again."),
-              backgroundColor: Colors.red,
-            ),
+                content: Text("Could not save profile."),
+                backgroundColor: Colors.red),
           );
         }
       }
@@ -136,30 +128,28 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from Gallery'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAndUploadImage(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Take a Photo'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAndUploadImage(ImageSource.camera);
-                },
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndUploadImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take a Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndUploadImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -178,20 +168,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           labelText: label,
           prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide:
-                BorderSide(color: Theme.of(context).primaryColor, width: 2.0),
-          ),
           filled: true,
           fillColor: Colors.grey.shade100,
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter your $label';
-          }
-          return null;
-        },
+        validator: (value) =>
+            (value == null || value.isEmpty) ? 'Please enter $label' : null,
       ),
     );
   }
@@ -219,7 +200,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       child: CircleAvatar(
                         key: ValueKey(_profilePicUrl),
                         radius: 50,
-                        backgroundImage: _profilePicUrl != null && !_isUploading
+                        backgroundImage: _profilePicUrl != null
                             ? NetworkImage(_profilePicUrl!)
                             : null,
                         backgroundColor: Colors.blueAccent.withOpacity(0.8),
