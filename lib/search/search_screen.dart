@@ -166,14 +166,14 @@ class _SearchScreenState extends State<SearchScreen> {
               tooltip: 'Scan QR Code',
               icon: const Icon(Icons.qr_code_scanner),
               onPressed: () async {
-                /* final scannedCode = await Navigator.of(context).push<String>(
+                final scannedCode = await Navigator.of(context).push<String>(
                   MaterialPageRoute(builder: (_) => const QRScannerScreen()),
                 );
 
                 if (scannedCode != null && scannedCode.isNotEmpty) {
                   _searchController.text = scannedCode;
                   await _performSearch(scannedCode);
-                }*/
+                }
               },
             ),
           ],

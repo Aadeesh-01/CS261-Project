@@ -49,6 +49,7 @@ dependencies:
   algoliasearch: ^1.36.1
   qr_flutter: ^4.0.0
   shared_preferences: ^2.2.2 
+  mobile_scanner: ^3.5.6
 
 dev_dependencies:
   flutter_test:

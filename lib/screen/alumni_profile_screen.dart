@@ -8,8 +8,12 @@ class AlumniProfileScreen extends StatelessWidget {
       : super(key: key);
 
   // A reusable widget for displaying details with an icon
-  Widget _buildDetailRow(BuildContext context,
-      {required IconData icon, required String title, required String value}) {
+  Widget _buildDetailRow(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -30,15 +34,13 @@ class AlumniProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Safely extract data ---
     final name = alumniData['name'] ?? 'Alumni Profile';
     final company = alumniData['company'] ?? 'Not specified';
     final skills = alumniData['skills'] ?? 'No skills listed';
     final batch = alumniData['batch']?.toString() ?? 'N/A';
 
-    // A unique identifier for the QR code (email, user ID, etc.)
-    final qrData =
-        alumniData['email'] ?? alumniData['objectID'] ?? 'no-unique-id';
+    // ✅ Use Firestore document ID for QR code
+    final qrData = alumniData['id'] ?? 'no-id-available';
 
     return Scaffold(
       appBar: AppBar(
@@ -59,7 +61,6 @@ class AlumniProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  // --- Profile Header ---
                   const CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.blueAccent,
@@ -87,37 +88,43 @@ class AlumniProfileScreen extends StatelessWidget {
                   const Divider(),
                   const SizedBox(height: 10),
 
-                  // --- Details Section ---
-                  _buildDetailRow(context,
-                      icon: Icons.school_outlined,
-                      title: 'Batch',
-                      value: batch),
-                  _buildDetailRow(context,
-                      icon: Icons.construction_outlined,
-                      title: 'Skills',
-                      value: skills),
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.school_outlined,
+                    title: 'Batch',
+                    value: batch,
+                  ),
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.construction_outlined,
+                    title: 'Skills',
+                    value: skills,
+                  ),
                   const SizedBox(height: 20),
 
                   // --- QR Code Section ---
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade200)),
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
                     child: Column(
                       children: [
                         QrImageView(
                           data: qrData,
                           version: QrVersions.auto,
                           size: 180.0,
-                          gapless: false, // Prevents rendering artifacts
+                          gapless: false,
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Scan to connect or view profile',
-                          style:
-                              TextStyle(fontSize: 14, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
