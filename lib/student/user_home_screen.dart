@@ -1,3 +1,4 @@
+import 'package:cs261_project/events_and_news/news_event_screen.dart';
 import 'package:cs261_project/screen/auth.dart';
 import 'package:cs261_project/search/search_screen.dart';
 import 'package:flutter/material.dart';
@@ -28,13 +29,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     final pages = [
       const MainHomeScreen(),
       const SearchScreen(),
+      NewsEventScreen(),
       const ProfileScreen(),
     ];
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-
-      // Clean, minimal app bar
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
@@ -48,7 +48,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ),
         actions: [
-          // Notification icon
           IconButton(
             icon:
                 const Icon(Icons.notifications_outlined, color: Colors.black87),
@@ -65,11 +64,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ),
       ),
-
-      // Modern drawer
       drawer: _buildModernDrawer(context, user),
-
-      // Body with animated transitions
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         transitionBuilder: (Widget child, Animation<double> animation) {
@@ -90,8 +85,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           child: pages[_currentIndex],
         ),
       ),
-
-      // Clean bottom navigation
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -120,9 +113,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   index: 1,
                 ),
                 _buildNavItem(
+                  icon: Icons.article_rounded,
+                  label: 'News',
+                  index: 2,
+                ),
+                _buildNavItem(
                   icon: Icons.person_rounded,
                   label: 'Profile',
-                  index: 2,
+                  index: 3,
                 ),
               ],
             ),
@@ -177,6 +175,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       case 1:
         return 'Search Alumni';
       case 2:
+        return 'News & Events';
+      case 3:
         return 'My Profile';
       default:
         return 'Alumni Connect';
@@ -188,7 +188,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       backgroundColor: Colors.white,
       child: Column(
         children: [
-          // Modern drawer header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
@@ -207,7 +206,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
@@ -246,8 +245,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ],
             ),
           ),
-
-          // Menu items
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -269,10 +266,18 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   },
                 ),
                 _buildDrawerItem(
+                  icon: Icons.article_rounded,
+                  title: "News & Events",
+                  onTap: () {
+                    setState(() => _currentIndex = 2);
+                    Navigator.pop(context);
+                  },
+                ),
+                _buildDrawerItem(
                   icon: Icons.person_rounded,
                   title: "My Profile",
                   onTap: () {
-                    setState(() => _currentIndex = 2);
+                    setState(() => _currentIndex = 3);
                     Navigator.pop(context);
                   },
                 ),
@@ -282,7 +287,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   title: "Settings",
                   onTap: () {
                     Navigator.pop(context);
-                    // Navigate to settings
                   },
                 ),
                 _buildDrawerItem(
@@ -290,7 +294,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   title: "Help & Support",
                   onTap: () {
                     Navigator.pop(context);
-                    // Navigate to help
                   },
                 ),
                 _buildDrawerItem(
@@ -298,14 +301,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   title: "About",
                   onTap: () {
                     Navigator.pop(context);
-                    // Show about dialog
                   },
                 ),
               ],
             ),
           ),
-
-          // Logout button
           Container(
             padding: const EdgeInsets.all(16),
             child: _buildDrawerItem(
