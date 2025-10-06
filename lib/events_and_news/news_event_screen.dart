@@ -1,3 +1,5 @@
+import 'package:cs261_project/screen/main_home_screen.dart';
+import 'package:cs261_project/student/user_home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'news_event_service.dart';
@@ -810,7 +812,10 @@ class _NewsEventScreenState extends State<NewsEventScreen>
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back_ios,
                         color: Colors.white, size: 18),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () =>
+                        Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => UserHomeScreen(),
+                    )),
                   ),
                 ),
                 flexibleSpace: FlexibleSpaceBar(

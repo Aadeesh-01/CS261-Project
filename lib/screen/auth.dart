@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart'; // NEW: Import firestore
 import 'package:cs261_project/student/user_role_dispatcher.dart';
+import 'package:firebase_messaging/firebase_messaging.dart'; // NEW: Import messaging
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -58,16 +60,48 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // NEW: Function to set up notifications after login
+  Future<void> _setupNotifications(String userId) async {
+    try {
+      // 1. Get the unique FCM token for this device
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+
+      if (fcmToken != null) {
+        // 2. Save the token to the user's document in Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .update({
+          'fcmToken': fcmToken,
+        });
+      }
+
+      // 3. Subscribe the user to the 'all_users' topic for general notifications
+      await FirebaseMessaging.instance.subscribeToTopic('all_users');
+    } catch (e) {
+      // It's good practice to handle potential errors
+      print("Failed to set up notifications: $e");
+    }
+  }
+
   Future<void> loginUser() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => isLoginLoading = true);
 
     try {
-      await _firebaseAuth.signInWithEmailAndPassword(
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
+
+      // --- THIS IS THE PERFECT SPOT ---
+      // User is successfully logged in, now set up notifications for them.
+      if (userCredential.user != null) {
+        await _setupNotifications(
+            userCredential.user!.uid); // NEW: Call the setup function
+      }
+      // -------------------------------
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -98,47 +132,26 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
+    // ... rest of your build method is unchanged
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF1B365D), // Deep navy blue
-              Color(0xFF2C5F7C), // Lighter navy
-              Color(0xFF1B365D), // Back to deep navy
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Logo and Header Section
-                      _buildHeader(),
-
-                      const SizedBox(height: 48),
-
-                      // Login Form Card
-                      _buildLoginForm(),
-
-                      const SizedBox(height: 24),
-
-                      // Additional Options
-                      _buildAdditionalOptions(),
-                    ],
-                  ),
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 48),
+                    _buildLoginForm(),
+                    const SizedBox(height: 32),
+                    _buildAdditionalOptions(),
+                  ],
                 ),
               ),
             ),
@@ -151,44 +164,30 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   Widget _buildHeader() {
     return Column(
       children: [
-        // Logo Container
-        Container(
+        SizedBox(
           width: 100,
           height: 100,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: const Icon(
-            Icons.school_outlined,
-            size: 50,
-            color: Color(0xFFF4A261), // Warm gold accent
-          ),
+          child: Image.asset('assets/images/logo.png'),
         ),
-
         const SizedBox(height: 24),
-
-        // App Title
         const Text(
           "Alumni Connect",
           style: TextStyle(
             fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 1.2,
+            fontWeight: FontWeight.w300,
+            color: Color(0xFF2C3E50),
+            letterSpacing: 1.5,
           ),
         ),
-
         const SizedBox(height: 8),
-
-        // Tagline
-        Text(
-          "Where memories meet opportunities",
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.white.withOpacity(0.8),
-            fontWeight: FontWeight.w300,
+        Container(
+          height: 2,
+          width: 60,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
+            ),
+            borderRadius: BorderRadius.circular(1),
           ),
         ),
       ],
@@ -200,12 +199,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -214,19 +213,16 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Welcome Text
             const Text(
               "Welcome Back!",
               style: TextStyle(
                 fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B365D),
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF2C3E50),
               ),
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 8),
-
             Text(
               "Sign in to continue your journey",
               style: TextStyle(
@@ -235,25 +231,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               ),
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 32),
-
-            // Email Field
             _buildEmailField(),
-
             const SizedBox(height: 20),
-
-            // Password Field
             _buildPasswordField(),
-
             const SizedBox(height: 16),
-
-            // Remember Me & Forgot Password
             _buildRememberMeRow(),
-
             const SizedBox(height: 32),
-
-            // Login Button
             _buildLoginButton(),
           ],
         ),
@@ -262,96 +246,56 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildEmailField() {
+    const primaryColor = Color(0xFF2C3E50);
     return TextFormField(
       controller: emailController,
       keyboardType: TextInputType.emailAddress,
       validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your email';
-        }
-        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+        if (value == null || value.isEmpty || !value.contains('@')) {
           return 'Please enter a valid email';
         }
         return null;
       },
       decoration: InputDecoration(
         labelText: 'Email Address',
-        hintText: 'Enter your email',
-        prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF1B365D)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
+        prefixIcon: const Icon(Icons.email_outlined, color: primaryColor),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1B365D), width: 2),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }
 
   Widget _buildPasswordField() {
+    const primaryColor = Color(0xFF2C3E50);
     return TextFormField(
       controller: passwordController,
       obscureText: _obscurePassword,
       validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your password';
-        }
-        if (value.length < 6) {
+        if (value == null || value.length < 6) {
           return 'Password must be at least 6 characters';
         }
         return null;
       },
       decoration: InputDecoration(
         labelText: 'Password',
-        hintText: 'Enter your password',
-        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF1B365D)),
+        prefixIcon: const Icon(Icons.lock_outline, color: primaryColor),
         suffixIcon: IconButton(
           icon: Icon(
             _obscurePassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
-            color: Color(0xFF1B365D),
+            color: primaryColor,
           ),
-          onPressed: () {
-            setState(() {
-              _obscurePassword = !_obscurePassword;
-            });
-          },
+          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1B365D), width: 2),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }
@@ -364,42 +308,22 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           children: [
             Checkbox(
               value: _rememberMe,
-              onChanged: (value) {
-                setState(() {
-                  _rememberMe = value ?? false;
-                });
-              },
-              activeColor: const Color(0xFF1B365D),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
+              onChanged: (value) =>
+                  setState(() => _rememberMe = value ?? false),
+              activeColor: const Color(0xFF2C3E50),
             ),
             const Text(
               'Remember me',
-              style: TextStyle(
-                color: Color(0xFF1B365D),
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Color(0xFF2C3E50)),
             ),
           ],
         ),
         TextButton(
-          onPressed: () {
-            // Handle forgot password
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Forgot password feature coming soon!'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onPressed: () {},
           child: const Text(
             'Forgot Password?',
             style: TextStyle(
-              color: Color(0xFFF4A261),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+                color: Color(0xFFD4AF37), fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -411,14 +335,14 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       height: 56,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFF4A261), Color(0xFFE76F51)],
+          colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFF4A261).withOpacity(0.3),
+            color: const Color(0xFFD4AF37).withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -429,19 +353,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: isLoginLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 2,
-                ),
-              )
+            ? const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
             : const Text(
                 'Sign In',
                 style: TextStyle(
@@ -455,69 +372,22 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildAdditionalOptions() {
-    return Column(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Security Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.security,
-                size: 16,
-                color: Colors.white.withOpacity(0.8),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Secure Login',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        Text(
+          "Don't have an account? ",
+          style: TextStyle(color: Colors.grey[600]),
         ),
-
-        const SizedBox(height: 24),
-
-        // Sign up option
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "Don't have an account? ",
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 14,
-              ),
+        TextButton(
+          onPressed: () {},
+          child: const Text(
+            'Sign Up',
+            style: TextStyle(
+              color: Color(0xFFD4AF37),
+              fontWeight: FontWeight.w600,
             ),
-            TextButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Registration feature coming soon!'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: const Text(
-                'Sign Up',
-                style: TextStyle(
-                  color: Color(0xFFF4A261),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
