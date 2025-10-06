@@ -1,17 +1,21 @@
 import 'package:cs261_project/screen/auth.dart';
 import 'package:cs261_project/screen/splash_screen.dart';
+import 'package:cs261_project/service/notification_service.dart';
 import 'package:cs261_project/student/user_role_dispatcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // --- NEW: Initialize the notification service ---
+  final notificationService = NotificationService();
+  await notificationService.init();
+  // --- END of new code ---
 
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   NotificationSettings settings = await messaging.requestPermission(
@@ -35,6 +39,8 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // --- NEW: Add the navigator key ---
+      navigatorKey: NotificationService.navigatorKey,
       title: 'Alumni Connect',
       theme: ThemeData().copyWith(
         colorScheme: ColorScheme.fromSeed(
@@ -48,10 +54,8 @@ class App extends StatelessWidget {
             return const SplashScreen();
           }
           if (snapshot.hasData) {
-            // If you have a pass, go to the security desk.
             return const UserRoleDispatcher();
           }
-          // If not, go to the login screen.
           return const AuthScreen();
         },
       ),
