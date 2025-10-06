@@ -61,10 +61,7 @@ class AdminHomeScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const MakeAdminButton(
-                            emailToMakeAdmin: "admin@example.com",
-                          )),
+                  MaterialPageRoute(builder: (_) => const MakeAdminButton()),
                 );
               },
             ),

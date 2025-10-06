@@ -12,11 +12,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // --- NEW: Initialize the notification service ---
+  // 🔔 Initialize notification service
   final notificationService = NotificationService();
   await notificationService.init();
-  // --- END of new code ---
 
+  // 🔔 Ask for notification permissions
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   NotificationSettings settings = await messaging.requestPermission(
     alert: true,
@@ -39,23 +39,29 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // --- NEW: Add the navigator key ---
       navigatorKey: NotificationService.navigatorKey,
       title: 'Alumni Connect',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData().copyWith(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color.fromARGB(255, 63, 17, 177),
         ),
       ),
-      home: StreamBuilder(
+
+      // 🔥 StreamBuilder listens for login/logout events
+      home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const SplashScreen();
           }
+
+          // 🔐 If user is logged in → check their role and navigate
           if (snapshot.hasData) {
             return const UserRoleDispatcher();
           }
+
+          // 👤 If not logged in → show login screen
           return const AuthScreen();
         },
       ),
