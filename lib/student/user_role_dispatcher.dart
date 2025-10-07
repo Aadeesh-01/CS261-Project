@@ -34,30 +34,36 @@ class _UserRoleDispatcherState extends State<UserRoleDispatcher> {
 
     print('UserRoleDispatcher: Logged in as ${user.email}');
 
-    // 🧩 Check if user is admin
-    final adminDoc =
-        await FirebaseFirestore.instance.collection('users').doc('s1').get();
+    final firestore = FirebaseFirestore.instance;
 
-    if (adminDoc.exists && adminDoc['email'] == user.email) {
-      print('Admin login detected');
-      // Construct a mock profile for admin
-      final adminProfile = Profile(
-        docId: 's1',
-        name: adminDoc['name'] ?? 'Admin',
-        role: 'admin',
-        isProfileComplete: adminDoc['isProfileComplete'] ?? true,
-      );
-
-      // Convert it into a one-shot stream
+    // Check "users" collection for students/admins
+    final userDoc = await firestore.collection('users').doc(user.uid).get();
+    if (userDoc.exists) {
       setState(() {
-        _profileStream = Stream.value(adminProfile);
+        _profileStream = _profileService.getProfileStreamByUid(user.uid);
       });
       return;
     }
 
-    // 🧩 If not admin → get profile stream from Firestore
-    setState(() {
-      _profileStream = _profileService.getProfileStreamByUid(user.uid);
+    // Check "alumni" collection for alumni
+    final alumniDoc = await firestore.collection('alumni').doc(user.uid).get();
+    if (alumniDoc.exists) {
+      final alumniProfile = Profile(
+        docId: alumniDoc.id,
+        name: alumniDoc['name'] ?? "Alumni Member",
+        role: "alumni",
+        isProfileComplete: alumniDoc['isProfileComplete'] ?? false,
+      );
+      setState(() {
+        _profileStream = Stream.value(alumniProfile);
+      });
+      return;
+    }
+
+    // If no profile found → sign out
+    print('No profile found → signing out');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FirebaseAuth.instance.signOut();
     });
   }
 
@@ -65,7 +71,7 @@ class _UserRoleDispatcherState extends State<UserRoleDispatcher> {
   Widget build(BuildContext context) {
     if (_profileStream == null) {
       return const Scaffold(
-        body: Center(child: Text("Authenticating...")),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -79,40 +85,34 @@ class _UserRoleDispatcherState extends State<UserRoleDispatcher> {
         }
 
         if (snapshot.hasError) {
-          print('Stream error: ${snapshot.error}');
           return Scaffold(
             body: Center(child: Text("Error: ${snapshot.error}")),
           );
         }
 
         if (!snapshot.hasData || snapshot.data == null) {
-          print('No profile found, signing out...');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             FirebaseAuth.instance.signOut();
           });
           return const Scaffold(
-            body: Center(child: Text("Inconsistent data. Signing out...")),
+            body: Center(child: Text("No profile found. Signing out...")),
           );
         }
 
         final profile = snapshot.data!;
         print('Profile loaded: ${profile.name}, role: ${profile.role}');
 
-        // 🚧 Force profile completion before proceeding
+        // Force profile completion before proceeding
         if (profile.isProfileComplete != true) {
-          print('Profile incomplete → redirecting to edit');
           return ProfileEditScreen(userDocumentId: profile.docId!);
         }
 
-        // 🧭 Navigate based on role
+        // Routing based on role
         if (profile.role == 'admin') {
-          print('Routing → AdminHomeScreen');
           return const AdminHomeScreen();
         } else if (profile.role == 'student' || profile.role == 'alumni') {
-          print('Routing → UserHomeScreen');
           return const UserHomeScreen();
         } else {
-          print('Unknown role → Signing out for safety');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             FirebaseAuth.instance.signOut();
           });

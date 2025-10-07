@@ -2,6 +2,7 @@ import 'package:cs261_project/admin/button.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'admin_add_user_screen.dart';
+import 'admin_add_alumni_screen.dart'; // NEW
 import 'package:cs261_project/admin/add_admin_screen.dart';
 import 'package:cs261_project/screen/auth.dart';
 
@@ -46,22 +47,23 @@ class AdminHomeScreen extends StatelessWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.school),
+              title: const Text('Add Alumni'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const AdminAddAlumniScreen()),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.admin_panel_settings),
               title: const Text('Add Admin'),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const AddAdminScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.admin_panel_settings),
-              title: const Text('MAKE Admin'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MakeAdminButton()),
                 );
               },
             ),
@@ -85,7 +87,6 @@ class AdminHomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 👤 Greeting
             Text(
               "Welcome, ${user?.displayName ?? "Admin"}",
               style: const TextStyle(
@@ -95,7 +96,7 @@ class AdminHomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // 📊 Stats Section
+            // Stats Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -107,7 +108,7 @@ class AdminHomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 30),
 
-            // ⚡ Quick Actions
+            // Quick Actions
             const Text(
               "Quick Actions",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -129,6 +130,13 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
                 _buildActionCard(
                   context,
+                  "Add Alumni",
+                  Icons.school,
+                  Colors.purple,
+                  const AdminAddAlumniScreen(),
+                ),
+                _buildActionCard(
+                  context,
                   "Add Admin",
                   Icons.admin_panel_settings,
                   Colors.blue,
@@ -142,7 +150,6 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  // 📌 Reusable Stat Card
   Widget _buildStatCard(
       String title, String count, IconData icon, Color color) {
     return Expanded(
@@ -157,10 +164,8 @@ class AdminHomeScreen extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 count,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               Text(title, style: const TextStyle(fontSize: 14)),
             ],
@@ -170,7 +175,6 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  // 📌 Reusable Action Card
   Widget _buildActionCard(BuildContext context, String title, IconData icon,
       Color color, Widget screen) {
     return Card(
@@ -178,10 +182,8 @@ class AdminHomeScreen extends StatelessWidget {
       elevation: 4,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => screen),
-        ),
+        onTap: () =>
+            Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

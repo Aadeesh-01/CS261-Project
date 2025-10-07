@@ -51,11 +51,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           IconButton(
             icon:
                 const Icon(Icons.notifications_outlined, color: Colors.black87),
-            onPressed: () {
-              // Handle notifications
-            },
+            onPressed: () {},
           ),
-          const SizedBox(width: 8),
         ],
         leading: Builder(
           builder: (context) => IconButton(
@@ -67,76 +64,46 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       drawer: _buildModernDrawer(context, user),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
-        transitionBuilder: (Widget child, Animation<double> animation) {
-          return SlideTransition(
-            position: animation.drive(
-              Tween(begin: const Offset(0.1, 0), end: Offset.zero).chain(
-                CurveTween(curve: Curves.easeOutCubic),
-              ),
-            ),
-            child: FadeTransition(
-              opacity: animation,
-              child: child,
-            ),
-          );
-        },
         child: Container(
           key: ValueKey<int>(_currentIndex),
           child: pages[_currentIndex],
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(
-                  icon: Icons.home_rounded,
-                  label: 'Home',
-                  index: 0,
-                ),
-                _buildNavItem(
-                  icon: Icons.search_rounded,
-                  label: 'Search',
-                  index: 1,
-                ),
-                _buildNavItem(
-                  icon: Icons.article_rounded,
-                  label: 'News',
-                  index: 2,
-                ),
-                _buildNavItem(
-                  icon: Icons.person_rounded,
-                  label: 'Profile',
-                  index: 3,
-                ),
-              ],
-            ),
+      bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  Widget _buildBottomNavBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.home_rounded, "Home", 0),
+              _buildNavItem(Icons.search_rounded, "Search", 1),
+              _buildNavItem(Icons.article_rounded, "News", 2),
+              _buildNavItem(Icons.person_rounded, "Profile", 3),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
+  Widget _buildNavItem(IconData icon, String label, int index) {
     final isSelected = _currentIndex == index;
-
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
       child: Container(
@@ -148,17 +115,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.blue[600] : Colors.grey[600],
-              size: 24,
-            ),
+            Icon(icon, color: isSelected ? Colors.blue[600] : Colors.grey[600]),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 color: isSelected ? Colors.blue[600] : Colors.grey[600],
-                fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
@@ -195,165 +157,77 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Colors.blue[600]!,
-                  Colors.blue[700]!,
-                ],
+                colors: [Colors.blue[600]!, Colors.blue[700]!],
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.grey[200],
-                    backgroundImage: user.photoURL != null
-                        ? NetworkImage(user.photoURL!)
-                        : null,
-                    child: user.photoURL == null
-                        ? Icon(
-                            Icons.person_rounded,
-                            size: 32,
-                            color: Colors.grey[600],
-                          )
-                        : null,
-                  ),
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: user.photoURL != null
+                      ? NetworkImage(user.photoURL!)
+                      : null,
+                  child: user.photoURL == null
+                      ? Icon(Icons.person_rounded,
+                          size: 32, color: Colors.grey[600])
+                      : null,
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  user.displayName ?? "Alumni Member",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(user.displayName ?? "Alumni Member",
+                    style: const TextStyle(color: Colors.white, fontSize: 18)),
                 const SizedBox(height: 4),
-                Text(
-                  user.email ?? "user@email.com",
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                  ),
-                ),
+                Text(user.email ?? "user@email.com",
+                    style: TextStyle(color: Colors.white.withOpacity(0.9))),
               ],
             ),
           ),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
-                _buildDrawerItem(
-                  icon: Icons.home_rounded,
-                  title: "Home",
-                  onTap: () {
-                    setState(() => _currentIndex = 0);
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.search_rounded,
-                  title: "Search Alumni",
-                  onTap: () {
-                    setState(() => _currentIndex = 1);
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.article_rounded,
-                  title: "News & Events",
-                  onTap: () {
-                    setState(() => _currentIndex = 2);
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.person_rounded,
-                  title: "My Profile",
-                  onTap: () {
-                    setState(() => _currentIndex = 3);
-                    Navigator.pop(context);
-                  },
-                ),
+                _buildDrawerItem(Icons.home_rounded, "Home", () {
+                  setState(() => _currentIndex = 0);
+                  Navigator.pop(context);
+                }),
+                _buildDrawerItem(Icons.search_rounded, "Search Alumni", () {
+                  setState(() => _currentIndex = 1);
+                  Navigator.pop(context);
+                }),
+                _buildDrawerItem(Icons.article_rounded, "News & Events", () {
+                  setState(() => _currentIndex = 2);
+                  Navigator.pop(context);
+                }),
+                _buildDrawerItem(Icons.person_rounded, "My Profile", () {
+                  setState(() => _currentIndex = 3);
+                  Navigator.pop(context);
+                }),
                 const Divider(height: 32),
+                _buildDrawerItem(Icons.settings_rounded, "Settings", () {}),
                 _buildDrawerItem(
-                  icon: Icons.settings_rounded,
-                  title: "Settings",
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.help_outline_rounded,
-                  title: "Help & Support",
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.info_outline_rounded,
-                  title: "About",
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
+                    Icons.help_outline_rounded, "Help & Support", () {}),
+                _buildDrawerItem(Icons.info_outline_rounded, "About", () {}),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: _buildDrawerItem(
-              icon: Icons.logout_rounded,
-              title: "Logout",
-              textColor: Colors.red[600],
-              iconColor: Colors.red[600],
-              onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const AuthScreen(),
-                  ),
-                );
-              },
-            ),
-          ),
+          _buildDrawerItem(Icons.logout_rounded, "Logout", () async {
+            await FirebaseAuth.instance.signOut();
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const AuthScreen()),
+            );
+          }, textColor: Colors.red[600], iconColor: Colors.red[600]),
         ],
       ),
     );
   }
 
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    Color? textColor,
-    Color? iconColor,
-  }) {
+  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap,
+      {Color? textColor, Color? iconColor}) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: iconColor ?? Colors.grey[700],
-        size: 22,
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: textColor ?? Colors.grey[800],
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+      leading: Icon(icon, color: iconColor ?? Colors.grey[700]),
+      title: Text(title,
+          style: TextStyle(color: textColor ?? Colors.grey[800], fontSize: 15)),
       onTap: onTap,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
     );
   }
 }
