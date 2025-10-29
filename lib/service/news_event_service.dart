@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'news_event_model.dart';
+import '../model/news_event_model.dart';
 
 class NewsEventService {
   final CollectionReference posts =

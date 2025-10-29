@@ -26,10 +26,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -53,10 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBWs6q-Ba-3Qg2Row2abXjX4LzVlHpfw1o',
-    appId: '1:363177970627:android:76e0001ebdf48c11eccb76',
-    messagingSenderId: '363177970627',
-    projectId: 'cs261-project-42711',
-    storageBucket: 'cs261-project-42711.firebasestorage.app',
+    apiKey: 'AIzaSyBmIMMat7j5X6jXaPknhHA1RGairOnl3fc',
+    appId: '1:38444085565:android:734b4a274d2cb275b95554',
+    messagingSenderId: '38444085565',
+    projectId: 'project-cs261',
+    storageBucket: 'project-cs261.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDTR81hYmSiqxk9i_KOcsit5HVOtUanwBo',
+    appId: '1:38444085565:ios:872bb7249ef7f5c2b95554',
+    messagingSenderId: '38444085565',
+    projectId: 'project-cs261',
+    storageBucket: 'project-cs261.firebasestorage.app',
+    iosBundleId: 'com.example.cs261Project',
   );
 }

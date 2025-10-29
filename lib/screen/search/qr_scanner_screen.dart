@@ -1,4 +1,4 @@
-import 'package:cs261_project/screen/alumni_profile_screen.dart';
+import 'package:cs261_project/screen/profile/alumni_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

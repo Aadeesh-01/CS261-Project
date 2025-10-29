@@ -1,8 +1,4 @@
-import 'package:cs261_project/student/user_home_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cs261_project/screen/auth.dart';
-//import 'package:cs261_project/screen/user_home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -27,12 +23,10 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -40,7 +34,6 @@ class _SplashScreenState extends State<SplashScreen>
       parent: _fadeController,
       curve: Curves.easeInOut,
     ));
-
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
@@ -53,8 +46,8 @@ class _SplashScreenState extends State<SplashScreen>
     _fadeController.forward();
     _slideController.forward();
 
-    // Navigate after delay
-    _navigateToNext();
+    // The navigation logic is now handled by main.dart's StreamBuilder
+    // so we REMOVED the _navigateToNext() call from here.
   }
 
   @override
@@ -64,34 +57,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  _navigateToNext() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
-
-    if (!mounted) return;
-
-    // Check if user is logged in
-    final user = FirebaseAuth.instance.currentUser;
-
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, _) {
-          return user != null ? const UserHomeScreen() : const AuthScreen();
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-        transitionsBuilder: (context, animation, _, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: animation.drive(
-                Tween(begin: const Offset(0, 0.1), end: Offset.zero),
-              ),
-              child: child,
-            ),
-          );
-        },
-      ),
-    );
-  }
+  // The _navigateToNext() method has been completely removed.
 
   @override
   Widget build(BuildContext context) {
@@ -115,10 +81,7 @@ class _SplashScreenState extends State<SplashScreen>
         child: SafeArea(
           child: Column(
             children: [
-              // Top spacing
               const Spacer(flex: 2),
-
-              // Main content
               Expanded(
                 flex: 3,
                 child: FadeTransition(
@@ -149,9 +112,7 @@ class _SplashScreenState extends State<SplashScreen>
                             color: Colors.white,
                           ),
                         ),
-
                         const SizedBox(height: 32),
-
                         // App Name
                         Text(
                           'Alumni Connect',
@@ -162,9 +123,7 @@ class _SplashScreenState extends State<SplashScreen>
                             letterSpacing: -0.5,
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
                         // Tagline
                         Text(
                           'Connect • Network • Grow',
@@ -175,9 +134,7 @@ class _SplashScreenState extends State<SplashScreen>
                             letterSpacing: 1.5,
                           ),
                         ),
-
                         const SizedBox(height: 48),
-
                         // Loading indicator
                         SizedBox(
                           width: 32,
@@ -194,8 +151,6 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
               ),
-
-              // Bottom section
               Expanded(
                 flex: 1,
                 child: Column(
@@ -216,97 +171,6 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Alternative: Minimal splash screen (even cleaner)
-class MinimalSplashScreen extends StatefulWidget {
-  const MinimalSplashScreen({super.key});
-
-  @override
-  State<MinimalSplashScreen> createState() => _MinimalSplashScreenState();
-}
-
-class _MinimalSplashScreenState extends State<MinimalSplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
-
-    _controller.forward();
-    _navigateToNext();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  _navigateToNext() async {
-    await Future.delayed(const Duration(milliseconds: 2000));
-
-    if (!mounted) return;
-
-    final user = FirebaseAuth.instance.currentUser;
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) =>
-            user != null ? const UserHomeScreen() : const AuthScreen(),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: FadeTransition(
-          opacity: _animation,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.blue[600],
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.school_rounded,
-                  size: 40,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Alumni Connect',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
                 ),
               ),
             ],

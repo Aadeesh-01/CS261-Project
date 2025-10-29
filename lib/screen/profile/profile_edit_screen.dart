@@ -1,16 +1,18 @@
 import 'dart:io';
 
-import 'package:cs261_project/profile/profile_model.dart';
-import 'package:cs261_project/profile/profile_service.dart';
-import 'package:cs261_project/student/user_home_screen.dart';
+import 'package:cs261_project/model/profile_model.dart';
+import 'package:cs261_project/service/profile_service.dart';
+import 'package:cs261_project/screen/student/user_home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileEditScreen extends StatefulWidget {
+  final String instituteId;
   final String userDocumentId;
-  const ProfileEditScreen({super.key, required this.userDocumentId});
+  const ProfileEditScreen(
+      {super.key, required this.userDocumentId, required this.instituteId});
 
   @override
   State<ProfileEditScreen> createState() => _ProfileEditScreenState();
@@ -19,7 +21,7 @@ class ProfileEditScreen extends StatefulWidget {
 class _ProfileEditScreenState extends State<ProfileEditScreen>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final ProfileService _profileService = ProfileService();
+  late final ProfileService _profileService;
 
   final TextEditingController nameCtrl = TextEditingController();
   final TextEditingController rollCtrl = TextEditingController();
@@ -41,8 +43,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
   @override
   void initState() {
     super.initState();
-    _loadProfile();
 
+    // Initialize the service first...
+    _profileService = ProfileService(instituteId: widget.instituteId);
+
+    // ...then you can safely use it.
+    _loadProfile();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -172,7 +178,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
         if (!mounted) return;
 
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const UserHomeScreen()),
+          MaterialPageRoute(
+            builder: (_) => UserHomeScreen(
+                instituteId: widget.instituteId), // Add the parameter
+          ),
           (route) => false,
         );
       } catch (e) {

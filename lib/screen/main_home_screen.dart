@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class MainHomeScreen extends StatefulWidget {
-  const MainHomeScreen({super.key});
+  final String instituteId;
+  const MainHomeScreen({super.key, required this.instituteId});
 
   @override
   State<MainHomeScreen> createState() => _MainHomeScreenState();

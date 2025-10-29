@@ -1,12 +1,13 @@
 import 'package:cs261_project/screen/main_home_screen.dart';
-import 'package:cs261_project/student/user_home_screen.dart';
+import 'package:cs261_project/screen/student/user_home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'news_event_service.dart';
-import 'news_event_model.dart';
+import '../../service/news_event_service.dart';
+import '../../model/news_event_model.dart';
 
 class NewsEventScreen extends StatefulWidget {
-  const NewsEventScreen({super.key});
+  final String instituteId;
+  const NewsEventScreen({super.key, required this.instituteId});
 
   @override
   State<NewsEventScreen> createState() => _NewsEventScreenState();
@@ -814,7 +815,9 @@ class _NewsEventScreenState extends State<NewsEventScreen>
                         color: Colors.white, size: 18),
                     onPressed: () =>
                         Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => UserHomeScreen(),
+                      builder: (context) => UserHomeScreen(
+                        instituteId: widget.instituteId,
+                      ),
                     )),
                   ),
                 ),

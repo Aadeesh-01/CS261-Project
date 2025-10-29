@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cs261_project/service/algolia_service.dart';
-import 'package:cs261_project/profile/alumni_detail_page.dart';
-import 'package:cs261_project/screen/qr_scanner_screen.dart';
+import 'package:cs261_project/screen/profile/alumni_detail_page.dart';
+import 'package:cs261_project/screen/search/qr_scanner_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  final String instituteId;
+  const SearchScreen({Key? key, required this.instituteId}) : super(key: key);
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();

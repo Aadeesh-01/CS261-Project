@@ -1,11 +1,12 @@
-import 'package:cs261_project/profile/profile_edit_screen.dart';
-import 'package:cs261_project/profile/profile_model.dart';
-import 'package:cs261_project/profile/profile_service.dart';
+import 'package:cs261_project/screen/profile/profile_edit_screen.dart';
+import 'package:cs261_project/model/profile_model.dart';
+import 'package:cs261_project/service/profile_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final String instituteId;
+  const ProfileScreen({super.key, required this.instituteId});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -13,7 +14,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen>
     with TickerProviderStateMixin {
-  final ProfileService _profileService = ProfileService();
+  late final ProfileService _profileService;
   bool _isLoading = true;
   Profile? _profile;
   String? _userDocumentId;
@@ -29,6 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.initState();
     _loadInitialData();
     _setupAnimations();
+    _profileService = ProfileService(instituteId: widget.instituteId);
   }
 
   void _setupAnimations() {
@@ -491,12 +493,16 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                                       final updated =
                                           await Navigator.push<bool>(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => ProfileEditScreen(
-                                              userDocumentId: _userDocumentId!),
-                                        ),
-                                      );
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    ProfileEditScreen(
+                                                  userDocumentId:
+                                                      _userDocumentId!,
+                                                  instituteId: widget
+                                                      .instituteId, // Add this line
+                                                ),
+                                              ));
 
                                       if (updated == true &&
                                           _userDocumentId != null) {

@@ -1,13 +1,15 @@
-import 'package:cs261_project/events_and_news/news_event_screen.dart';
+import 'package:cs261_project/screen/events_and_news/news_event_screen.dart';
 import 'package:cs261_project/screen/auth.dart';
-import 'package:cs261_project/search/search_screen.dart';
+import 'package:cs261_project/screen/message/inbox_screen.dart';
+import 'package:cs261_project/screen/search/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cs261_project/profile/profile_screen.dart';
+import 'package:cs261_project/screen/profile/profile_screen.dart';
 import 'package:cs261_project/screen/main_home_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
-  const UserHomeScreen({super.key});
+  final String instituteId;
+  const UserHomeScreen({super.key, required this.instituteId});
 
   @override
   State<UserHomeScreen> createState() => _UserHomeScreenState();
@@ -27,10 +29,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
 
     final pages = [
-      const MainHomeScreen(),
-      const SearchScreen(),
-      NewsEventScreen(),
-      const ProfileScreen(),
+      MainHomeScreen(instituteId: widget.instituteId),
+      SearchScreen(instituteId: widget.instituteId),
+      NewsEventScreen(instituteId: widget.instituteId),
+      ProfileScreen(instituteId: widget.instituteId),
+      InboxScreen(instituteId: widget.instituteId),
     ];
 
     return Scaffold(
@@ -95,6 +98,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               _buildNavItem(Icons.search_rounded, "Search", 1),
               _buildNavItem(Icons.article_rounded, "News", 2),
               _buildNavItem(Icons.person_rounded, "Profile", 3),
+              _buildNavItem(Icons.question_answer, "Inbox", 4)
             ],
           ),
         ),
@@ -140,6 +144,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         return 'News & Events';
       case 3:
         return 'My Profile';
+      case 4:
+        return ' Inbox';
       default:
         return 'Alumni Connect';
     }

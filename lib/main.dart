@@ -1,54 +1,65 @@
-import 'package:cs261_project/screen/auth.dart';
-import 'package:cs261_project/screen/splash_screen.dart';
-import 'package:cs261_project/service/notification_service.dart';
-import 'package:cs261_project/student/user_role_dispatcher.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cs261_project/firebase_options.dart';
+import 'package:cs261_project/screen/auth.dart';
+import 'package:cs261_project/screen/splash_screen.dart';
+import 'package:cs261_project/service/user_role_dispatcher.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // 🔔 Initialize notification service
-  final notificationService = NotificationService();
-  await notificationService.init();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("✅ Firebase initialized successfully!");
+  } catch (e) {
+    print("❌ Firebase initialization failed: $e");
+  }
 
-  // 🔔 Ask for notification permissions
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-  NotificationSettings settings = await messaging.requestPermission(
-    alert: true,
-    announcement: false,
-    badge: true,
-    carPlay: false,
-    criticalAlert: false,
-    provisional: false,
-    sound: true,
-  );
-
-  print('User granted permission: ${settings.authorizationStatus}');
-
-  runApp(const App());
+  runApp(const MyApp());
 }
 
-class App extends StatelessWidget {
-  const App({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  String? _lastInstituteId;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInstituteId();
+  }
+
+  Future<void> _loadInstituteId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _lastInstituteId = prefs.getString('lastInstituteId');
+      _isLoading = false;
+    });
+    print("🏫 Loaded institute ID: $_lastInstituteId");
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: NotificationService.navigatorKey,
-      title: 'Alumni Connect',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData().copyWith(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 63, 17, 177),
-        ),
-      ),
+    if (_isLoading) {
+      return const MaterialApp(home: SplashScreen());
+    }
 
-      // 🔥 StreamBuilder listens for login/logout events
+    return MaterialApp(
+      title: 'CS261 Project',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+      ),
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
@@ -56,13 +67,19 @@ class App extends StatelessWidget {
             return const SplashScreen();
           }
 
-          // 🔐 If user is logged in → check their role and navigate
           if (snapshot.hasData) {
-            return const UserRoleDispatcher();
+            print("🚀 Logged in as: ${snapshot.data!.uid}");
+            if (_lastInstituteId != null) {
+              print("✅ Using institute from prefs: $_lastInstituteId");
+              return UserRoleDispatcher(instituteId: _lastInstituteId!);
+            } else {
+              print(
+                  "⚠️ No institute found in prefs — redirecting to AuthScreen");
+              return const AuthScreen();
+            }
+          } else {
+            return const AuthScreen();
           }
-
-          // 👤 If not logged in → show login screen
-          return const AuthScreen();
         },
       ),
     );

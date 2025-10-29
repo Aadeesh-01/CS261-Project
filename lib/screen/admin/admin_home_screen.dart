@@ -1,13 +1,13 @@
-import 'package:cs261_project/admin/button.dart';
+import 'package:cs261_project/screen/admin/admin_add_user_screen.dart';
+import 'package:cs261_project/screen/admin/admin_institute_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'admin_add_user_screen.dart';
-import 'admin_add_alumni_screen.dart'; // NEW
-import 'package:cs261_project/admin/add_admin_screen.dart';
 import 'package:cs261_project/screen/auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminHomeScreen extends StatelessWidget {
-  const AdminHomeScreen({super.key});
+  final String instituteId;
+  const AdminHomeScreen({super.key, required this.instituteId});
 
   @override
   Widget build(BuildContext context) {
@@ -25,45 +25,20 @@ class AdminHomeScreen extends StatelessWidget {
             UserAccountsDrawerHeader(
               accountName: Text(user?.displayName ?? "Administrator"),
               accountEmail: Text(user?.email ?? ""),
-              currentAccountPicture: CircleAvatar(
+              currentAccountPicture: const CircleAvatar(
                 backgroundColor: Colors.white,
-                backgroundImage: user?.photoURL != null
-                    ? NetworkImage(user!.photoURL!)
-                    : null,
-                child: user?.photoURL == null
-                    ? const Icon(Icons.admin_panel_settings,
-                        size: 40, color: Colors.blueAccent)
-                    : null,
+                child: Icon(Icons.admin_panel_settings,
+                    size: 40, color: Colors.blueAccent),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Add User'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AdminAddUserScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.school),
-              title: const Text('Add Alumni'),
+              leading: const Icon(Icons.person_add),
+              title: const Text('Add Participant'),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const AdminAddAlumniScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.admin_panel_settings),
-              title: const Text('Add Admin'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddAdminScreen()),
+                      builder: (_) => const AdminAddParticipantScreen()),
                 );
               },
             ),
@@ -95,20 +70,16 @@ class AdminHomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Stats Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStatCard("Users", "120", Icons.people, Colors.green),
-                _buildStatCard("Admins", "5", Icons.security, Colors.blue),
-                _buildStatCard(
-                    "Pending", "8", Icons.hourglass_bottom, Colors.orange),
+                _buildStatCard("Students", "45", Icons.school, Colors.green),
+                _buildStatCard("Alumni", "28", Icons.people, Colors.orange),
+                _buildStatCard("Admins", "3", Icons.admin_panel_settings,
+                    Colors.blueAccent),
               ],
             ),
             const SizedBox(height: 30),
-
-            // Quick Actions
             const Text(
               "Quick Actions",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -123,24 +94,17 @@ class AdminHomeScreen extends StatelessWidget {
               children: [
                 _buildActionCard(
                   context,
-                  "Add User",
-                  Icons.person_add,
+                  "Add Participant",
+                  Icons.person_add_alt_1,
                   Colors.green,
-                  const AdminAddUserScreen(),
+                  const AdminAddParticipantScreen(),
                 ),
                 _buildActionCard(
                   context,
-                  "Add Alumni",
-                  Icons.school,
+                  "View Institutes",
+                  Icons.account_balance,
                   Colors.purple,
-                  const AdminAddAlumniScreen(),
-                ),
-                _buildActionCard(
-                  context,
-                  "Add Admin",
-                  Icons.admin_panel_settings,
-                  Colors.blue,
-                  const AddAdminScreen(),
+                  const AdminInstituteListScreen(),
                 ),
               ],
             ),
@@ -162,11 +126,9 @@ class AdminHomeScreen extends StatelessWidget {
             children: [
               Icon(icon, size: 30, color: color),
               const SizedBox(height: 10),
-              Text(
-                count,
-                style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
+              Text(count,
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold)),
               Text(title, style: const TextStyle(fontSize: 14)),
             ],
           ),

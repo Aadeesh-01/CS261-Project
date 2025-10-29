@@ -1,10 +1,7 @@
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services") // ✅ Must be here
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -25,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.cs261_project"
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -43,8 +40,10 @@ flutter {
 }
 
 dependencies {
-    // FINAL UPDATE: Using a widely available and stable version
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
+    // ✅ Firebase SDKs
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-functions")
 }
-
