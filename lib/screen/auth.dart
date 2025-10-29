@@ -17,6 +17,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   String _email = '';
   String _password = '';
@@ -126,84 +127,344 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login'), centerTitle: true),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Card(
-            elevation: 6,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    DropdownButtonFormField<String>(
-                      value: _selectedInstituteId,
-                      items: _institutes
-                          .map(
-                            (inst) => DropdownMenuItem<String>(
-                              value: inst['id'],
-                              child: Text(inst['name']),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) =>
-                          setState(() => _selectedInstituteId = v),
-                      decoration: const InputDecoration(
-                        labelText: 'Select Institute',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (v) =>
-                          v == null ? 'Please select an institute' : null,
-                    ),
-                    const SizedBox(height: 15),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (v) =>
-                          v!.isEmpty ? 'Please enter your email' : null,
-                      onSaved: (v) => _email = v!,
-                    ),
-                    const SizedBox(height: 15),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(),
-                      ),
-                      obscureText: true,
-                      validator: (v) => v!.length < 6
-                          ? 'Password must be at least 6 characters'
-                          : null,
-                      onSaved: (v) => _password = v!,
-                    ),
-                    const SizedBox(height: 25),
-                    _isLoading
-                        ? const CircularProgressIndicator()
-                        : ElevatedButton(
-                            onPressed: _loginUser,
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 50),
-                              backgroundColor: Colors.green,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text('Login'),
-                          ),
-                  ],
-                ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.green.shade50,
+              Colors.white,
+              Colors.green.shade50,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo Section
+                  _buildLogoSection(),
+                  const SizedBox(height: 50),
+
+                  // Login Card
+                  _buildLoginCard(),
+                  const SizedBox(height: 20),
+
+                  // Bottom Section
+                  _buildBottomSection(),
+                ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLogoSection() {
+    return Column(
+      children: [
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.green.withOpacity(0.3),
+                blurRadius: 20,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/images/logo.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.white,
+                  child: Icon(
+                    Icons.school_rounded,
+                    size: 70,
+                    color: Colors.green.shade700,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Alumni Connect',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.green.shade800,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Welcome Back!',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey.shade600,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.1),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Login to your account',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+
+              // Institute Dropdown
+              _buildInstituteDropdown(),
+              const SizedBox(height: 20),
+
+              // Email Field
+              _buildEmailField(),
+              const SizedBox(height: 20),
+
+              // Password Field
+              _buildPasswordField(),
+              const SizedBox(height: 12),
+
+              // Forgot Password
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    // TODO: Implement forgot password
+                  },
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Login Button
+              _buildLoginButton(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInstituteDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _selectedInstituteId,
+        items: _institutes
+            .map(
+              (inst) => DropdownMenuItem<String>(
+                value: inst['id'],
+                child: Text(inst['name']),
+              ),
+            )
+            .toList(),
+        onChanged: (v) => setState(() => _selectedInstituteId = v),
+        decoration: InputDecoration(
+          labelText: 'Select Institute',
+          prefixIcon: Icon(Icons.school_outlined, color: Colors.green.shade600),
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          labelStyle: TextStyle(color: Colors.grey.shade600),
+        ),
+        validator: (v) => v == null ? 'Please select an institute' : null,
+        dropdownColor: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  }
+
+  Widget _buildEmailField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: TextFormField(
+        decoration: InputDecoration(
+          labelText: 'Email Address',
+          prefixIcon: Icon(Icons.email_outlined, color: Colors.green.shade600),
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          labelStyle: TextStyle(color: Colors.grey.shade600),
+        ),
+        keyboardType: TextInputType.emailAddress,
+        validator: (v) => v!.isEmpty ? 'Please enter your email' : null,
+        onSaved: (v) => _email = v!,
+      ),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: TextFormField(
+        decoration: InputDecoration(
+          labelText: 'Password',
+          prefixIcon: Icon(Icons.lock_outlined, color: Colors.green.shade600),
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscurePassword
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              color: Colors.grey.shade600,
+            ),
+            onPressed: () {
+              setState(() {
+                _obscurePassword = !_obscurePassword;
+              });
+            },
+          ),
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          labelStyle: TextStyle(color: Colors.grey.shade600),
+        ),
+        obscureText: _obscurePassword,
+        validator: (v) =>
+            v!.length < 6 ? 'Password must be at least 6 characters' : null,
+        onSaved: (v) => _password = v!,
+      ),
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.green.shade600, Colors.green.shade700],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _loginUser,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : const Text(
+                'Login',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  letterSpacing: 1,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSection() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Don't have an account? ",
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+            TextButton(
+              onPressed: () {
+                // TODO: Navigate to contact admin
+              },
+              child: Text(
+                'Contact Admin',
+                style: TextStyle(
+                  color: Colors.green.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          '© 2025 Alumni Connect',
+          style: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,3 @@
-import 'package:cs261_project/screen/main_home_screen.dart';
-import 'package:cs261_project/screen/student/user_home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../service/news_event_service.dart';
@@ -797,74 +795,6 @@ class _NewsEventScreenState extends State<NewsEventScreen>
           position: _slideAnimation,
           child: CustomScrollView(
             slivers: [
-              // Royal App Bar
-              SliverAppBar(
-                expandedHeight: 120,
-                floating: false,
-                pinned: true,
-                backgroundColor: const Color(0xFF2C3E50),
-                elevation: 0,
-                leading: Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios,
-                        color: Colors.white, size: 18),
-                    onPressed: () =>
-                        Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => UserHomeScreen(
-                        instituteId: widget.instituteId,
-                      ),
-                    )),
-                  ),
-                ),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF2C3E50),
-                          Color(0xFF34495E),
-                        ],
-                      ),
-                    ),
-                    child: const Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 40),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'News & Events',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w300,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Stay connected with your alumni community',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
               // Add Post Panel
               SliverToBoxAdapter(
                 child: _buildAddPostPanel(),

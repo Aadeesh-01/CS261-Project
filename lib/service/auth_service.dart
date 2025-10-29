@@ -1,5 +1,3 @@
-import 'package:cs261_project/screen/admin/admin_home_screen.dart';
-import 'package:cs261_project/screen/student/user_home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -180,7 +178,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   children: [
                     /// 🔹 Institute dropdown
                     DropdownButtonFormField<String>(
-                      value: _selectedInstituteId,
+                      initialValue: _selectedInstituteId,
                       items: _institutes
                           .map(
                             (inst) => DropdownMenuItem<String>(
@@ -205,7 +203,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
                     if (!_isLogin)
                       DropdownButtonFormField<String>(
-                        value: _selectedRole,
+                        initialValue: _selectedRole,
                         items: const [
                           DropdownMenuItem(
                               value: 'student', child: Text('Student')),

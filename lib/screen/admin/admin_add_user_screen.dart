@@ -101,7 +101,7 @@ class _AdminAddParticipantScreenState extends State<AdminAddParticipantScreen> {
           child: ListView(
             children: [
               DropdownButtonFormField<String>(
-                value: _selectedInstituteId,
+                initialValue: _selectedInstituteId,
                 items: _institutes
                     .map(
                       (inst) => DropdownMenuItem<String>(
@@ -121,7 +121,7 @@ class _AdminAddParticipantScreenState extends State<AdminAddParticipantScreen> {
               ),
               const SizedBox(height: 15),
               DropdownButtonFormField<String>(
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 items: const [
                   DropdownMenuItem(value: 'student', child: Text('Student')),
                   DropdownMenuItem(value: 'alumni', child: Text('Alumni')),

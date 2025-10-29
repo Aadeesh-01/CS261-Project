@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 //import 'package:cs261_project/profile/alumni_profile_screen.dart';
 
 class QRScannerScreen extends StatefulWidget {
-  const QRScannerScreen({Key? key}) : super(key: key);
+  const QRScannerScreen({super.key});
 
   @override
   State<QRScannerScreen> createState() => _QRScannerScreenState();

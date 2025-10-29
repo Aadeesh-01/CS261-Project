@@ -3,7 +3,6 @@ import 'package:cs261_project/screen/admin/admin_institute_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cs261_project/screen/auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   final String instituteId;

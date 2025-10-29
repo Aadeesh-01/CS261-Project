@@ -4,8 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 class AlumniProfileScreen extends StatelessWidget {
   final Map<String, dynamic> alumniData;
 
-  const AlumniProfileScreen({Key? key, required this.alumniData})
-      : super(key: key);
+  const AlumniProfileScreen({super.key, required this.alumniData});
 
   // A reusable widget for displaying details with an icon
   Widget _buildDetailRow(

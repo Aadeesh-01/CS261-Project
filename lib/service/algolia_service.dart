@@ -38,8 +38,6 @@ class AlgoliaService {
         objectID: objectId,
       );
 
-      if (response == null) return null;
-
       final Map<String, dynamic> map =
           jsonDecode(jsonEncode(response)) as Map<String, dynamic>;
       return map;

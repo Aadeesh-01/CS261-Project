@@ -4,8 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 class AlumniDetailPage extends StatefulWidget {
   final Map<String, dynamic> alumniData;
 
-  const AlumniDetailPage({Key? key, required this.alumniData})
-      : super(key: key);
+  const AlumniDetailPage({super.key, required this.alumniData});
 
   @override
   State<AlumniDetailPage> createState() => _AlumniDetailPageState();

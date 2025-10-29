@@ -113,18 +113,20 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+          color:
+              isSelected ? Colors.green.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isSelected ? Colors.blue[600] : Colors.grey[600]),
+            Icon(icon,
+                color: isSelected ? Colors.green.shade600 : Colors.grey[600]),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.blue[600] : Colors.grey[600],
+                color: isSelected ? Colors.green.shade600 : Colors.grey[600],
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
@@ -156,59 +158,108 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       backgroundColor: Colors.white,
       child: Column(
         children: [
+          // Header with green theme
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+            padding: const EdgeInsets.fromLTRB(24, 50, 24, 30),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Colors.blue[600]!, Colors.blue[700]!],
+                colors: [Colors.green.shade600, Colors.green.shade700],
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.grey[200],
-                  backgroundImage: user.photoURL != null
-                      ? NetworkImage(user.photoURL!)
-                      : null,
-                  child: user.photoURL == null
-                      ? Icon(Icons.person_rounded,
-                          size: 32, color: Colors.grey[600])
-                      : null,
+                // Avatar with white border
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 35,
+                    backgroundColor: Colors.white,
+                    backgroundImage: user.photoURL != null
+                        ? NetworkImage(user.photoURL!)
+                        : null,
+                    child: user.photoURL == null
+                        ? Icon(Icons.person_rounded,
+                            size: 40, color: Colors.green.shade600)
+                        : null,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                Text(user.displayName ?? "Alumni Member",
-                    style: const TextStyle(color: Colors.white, fontSize: 18)),
+                Text(
+                  user.displayName ?? "Alumni Member",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(user.email ?? "user@email.com",
-                    style: TextStyle(color: Colors.white.withOpacity(0.9))),
+                Text(
+                  user.email ?? "user@email.com",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
               ],
             ),
           ),
+
+          // Menu Items
           Expanded(
             child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
-                _buildDrawerItem(Icons.home_rounded, "Home", () {
-                  setState(() => _currentIndex = 0);
-                  Navigator.pop(context);
-                }),
-                _buildDrawerItem(Icons.search_rounded, "Search Alumni", () {
-                  setState(() => _currentIndex = 1);
-                  Navigator.pop(context);
-                }),
-                _buildDrawerItem(Icons.article_rounded, "News & Events", () {
-                  setState(() => _currentIndex = 2);
-                  Navigator.pop(context);
-                }),
-                _buildDrawerItem(Icons.person_rounded, "My Profile", () {
-                  setState(() => _currentIndex = 3);
-                  Navigator.pop(context);
-                }),
-                const Divider(height: 32),
+                _buildDrawerItem(
+                  Icons.home_rounded,
+                  "Home",
+                  () {
+                    setState(() => _currentIndex = 0);
+                    Navigator.pop(context);
+                  },
+                  isSelected: _currentIndex == 0,
+                ),
+                _buildDrawerItem(
+                  Icons.search_rounded,
+                  "Search Alumni",
+                  () {
+                    setState(() => _currentIndex = 1);
+                    Navigator.pop(context);
+                  },
+                  isSelected: _currentIndex == 1,
+                ),
+                _buildDrawerItem(
+                  Icons.article_rounded,
+                  "News & Events",
+                  () {
+                    setState(() => _currentIndex = 2);
+                    Navigator.pop(context);
+                  },
+                  isSelected: _currentIndex == 2,
+                ),
+                _buildDrawerItem(
+                  Icons.person_rounded,
+                  "My Profile",
+                  () {
+                    setState(() => _currentIndex = 3);
+                    Navigator.pop(context);
+                  },
+                  isSelected: _currentIndex == 3,
+                ),
+                const Divider(height: 32, indent: 16, endIndent: 16),
                 _buildDrawerItem(Icons.settings_rounded, "Settings", () {}),
                 _buildDrawerItem(
                     Icons.help_outline_rounded, "Help & Support", () {}),
@@ -216,24 +267,75 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ],
             ),
           ),
-          _buildDrawerItem(Icons.logout_rounded, "Logout", () async {
-            await FirebaseAuth.instance.signOut();
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const AuthScreen()),
-            );
-          }, textColor: Colors.red[600], iconColor: Colors.red[600]),
+
+          // Logout Button
+          Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.red.shade200),
+            ),
+            child: ListTile(
+              leading: Icon(Icons.logout_rounded, color: Colors.red.shade600),
+              title: Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.red.shade600,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onTap: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const AuthScreen()),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap,
-      {Color? textColor, Color? iconColor}) {
-    return ListTile(
-      leading: Icon(icon, color: iconColor ?? Colors.grey[700]),
-      title: Text(title,
-          style: TextStyle(color: textColor ?? Colors.grey[800], fontSize: 15)),
-      onTap: onTap,
+  Widget _buildDrawerItem(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool isSelected = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.green.shade50 : null,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.green.shade600 : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            color: isSelected ? Colors.white : Colors.grey.shade700,
+            size: 22,
+          ),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isSelected ? Colors.green.shade700 : Colors.grey.shade800,
+            fontSize: 15,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        trailing: isSelected
+            ? Icon(Icons.check_circle, color: Colors.green.shade600, size: 20)
+            : null,
+        onTap: onTap,
+      ),
     );
   }
 }

@@ -13,6 +13,7 @@ class _MainHomeScreenState extends State<MainHomeScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  int _selectedCardIndex = -1;
 
   @override
   void initState() {
@@ -63,7 +64,12 @@ class _MainHomeScreenState extends State<MainHomeScreen>
                 // Elegant Welcome Header
                 _buildWelcomeHeader(),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 24),
+
+                // Quick Stats Section
+                _buildQuickStats(),
+
+                const SizedBox(height: 32),
 
                 // Royal Actions Section
                 _buildRoyalActions(),
@@ -86,40 +92,170 @@ class _MainHomeScreenState extends State<MainHomeScreen>
   }
 
   Widget _buildWelcomeHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Welcome',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w300,
-            color: Color(0xFF2C3E50),
-            letterSpacing: 1.5,
-          ),
+    final hour = DateTime.now().hour;
+    String greeting;
+    IconData greetingIcon;
+
+    if (hour < 12) {
+      greeting = 'Good Morning';
+      greetingIcon = Icons.wb_sunny_outlined;
+    } else if (hour < 17) {
+      greeting = 'Good Afternoon';
+      greetingIcon = Icons.wb_sunny;
+    } else {
+      greeting = 'Good Evening';
+      greetingIcon = Icons.nightlight_outlined;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFD4AF37).withOpacity(0.1),
+            Colors.white.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        const SizedBox(height: 8),
-        Container(
-          height: 2,
-          width: 60,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFD4AF37).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                greetingIcon,
+                color: const Color(0xFFD4AF37),
+                size: 32,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      greeting,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2C3E50),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Welcome to Alumni Connect',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            borderRadius: BorderRadius.circular(1),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.star_rounded,
+                  color: Colors.amber[600],
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Your distinguished alumni network awaits',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Your distinguished alumni network awaits',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.5,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickStats() {
+    final stats = [
+      {'label': 'Alumni', 'value': '500+', 'icon': Icons.people_outline},
+      {'label': 'Events', 'value': '12', 'icon': Icons.event_outlined},
+      {'label': 'Jobs', 'value': '25', 'icon': Icons.work_outline},
+    ];
+
+    return Row(
+      children: stats.map((stat) {
+        return Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  stat['icon'] as IconData,
+                  color: const Color(0xFF6B73FF),
+                  size: 24,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  stat['value'] as String,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  stat['label'] as String,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 
@@ -129,39 +265,73 @@ class _MainHomeScreenState extends State<MainHomeScreen>
         'icon': Icons.people_alt_outlined,
         'title': 'Alumni Network',
         'subtitle': 'Connect with peers',
-        'color': const Color(0xFF6B73FF)
+        'color': const Color(0xFF6B73FF),
+        'count': '500+'
       },
       {
         'icon': Icons.calendar_today_outlined,
         'title': 'Events',
         'subtitle': 'Exclusive gatherings',
-        'color': const Color(0xFF9C88FF)
+        'color': const Color(0xFF9C88FF),
+        'count': '12'
       },
       {
         'icon': Icons.work_outline_outlined,
         'title': 'Opportunities',
         'subtitle': 'Career advancement',
-        'color': const Color(0xFFFF9F43)
+        'color': const Color(0xFFFF9F43),
+        'count': '25'
       },
       {
         'icon': Icons.school_outlined,
         'title': 'Mentorship',
         'subtitle': 'Wisdom exchange',
-        'color': const Color(0xFF10AC84)
+        'color': const Color(0xFF10AC84),
+        'count': '50+'
       },
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Connect & Grow',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF2C3E50),
-            letterSpacing: 0.5,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Connect & Grow',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF2C3E50),
+                letterSpacing: 0.5,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD4AF37).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome,
+                    size: 14,
+                    color: const Color(0xFFD4AF37),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Explore',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFD4AF37),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
         GridView.builder(
@@ -169,61 +339,116 @@ class _MainHomeScreenState extends State<MainHomeScreen>
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
-            childAspectRatio: 1.2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.1,
           ),
           itemCount: actions.length,
           itemBuilder: (context, index) {
             final action = actions[index];
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
+            final isSelected = _selectedCardIndex == index;
+
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              transform: Matrix4.identity()..scale(isSelected ? 0.95 : 1.0),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedCardIndex = index;
+                  });
+                  Future.delayed(const Duration(milliseconds: 150), () {
+                    setState(() {
+                      _selectedCardIndex = -1;
+                    });
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${action['title']} coming soon'),
                         behavior: SnackBarBehavior.floating,
                         backgroundColor: const Color(0xFF2C3E50),
+                        duration: const Duration(seconds: 2),
                       ),
                     );
-                  },
+                  });
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white,
+                        (action['color'] as Color).withOpacity(0.02),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected
+                          ? (action['color'] as Color).withOpacity(0.5)
+                          : Colors.transparent,
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isSelected
+                            ? (action['color'] as Color).withOpacity(0.3)
+                            : Colors.black.withOpacity(0.04),
+                        blurRadius: isSelected ? 15 : 20,
+                        offset: Offset(0, isSelected ? 4 : 8),
+                      ),
+                    ],
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: (action['color'] as Color).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            action['icon'] as IconData,
-                            size: 24,
-                            color: action['color'] as Color,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    (action['color'] as Color).withOpacity(0.2),
+                                    (action['color'] as Color).withOpacity(0.1),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                action['icon'] as IconData,
+                                size: 24,
+                                color: action['color'] as Color,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    (action['color'] as Color).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                action['count'] as String,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: action['color'] as Color,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const Spacer(),
                         Text(
                           action['title'] as String,
                           style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
                             color: Color(0xFF2C3E50),
                           ),
                         ),
@@ -231,7 +456,7 @@ class _MainHomeScreenState extends State<MainHomeScreen>
                         Text(
                           action['subtitle'] as String,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w400,
                           ),
