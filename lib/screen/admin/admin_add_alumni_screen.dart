@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class AdminAddAlumniScreen extends StatefulWidget {
-  const AdminAddAlumniScreen({super.key});
+  final String instituteId;
+  const AdminAddAlumniScreen({super.key, required this.instituteId});
 
   @override
   State<AdminAddAlumniScreen> createState() => _AdminAddAlumniScreenState();
@@ -42,30 +42,20 @@ class _AdminAddAlumniScreenState extends State<AdminAddAlumniScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Create Auth user
-      final userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      final uid = userCredential.user!.uid;
-
-      // Add entry to unified participants collection
-      await FirebaseFirestore.instance.collection('participants').doc(uid).set({
-        'uid': uid,
-        'name': _nameController.text.trim(),
+      final callable = FirebaseFunctions.instanceFor(region: 'asia-south1')
+          .httpsCallable('createParticipantAccount');
+      final result = await callable.call({
         'email': _emailController.text.trim(),
+        'password': _passwordController.text.trim(),
+        'name': _nameController.text.trim(),
+        'role': 'alumni',
         'year': _yearController.text.trim(),
-        'role': 'alumni', // ✅ Hardcoded
-        'profileImage': '',
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'instituteId': widget.instituteId,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Alumni added successfully!"),
+        SnackBar(
+          content: Text(result.data['message'] ?? "Alumni added successfully!"),
           backgroundColor: Colors.green,
         ),
       );
@@ -76,10 +66,7 @@ class _AdminAddAlumniScreenState extends State<AdminAddAlumniScreen> {
       _passwordController.clear();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: $e"),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
       );
     } finally {
       setState(() => _isLoading = false);

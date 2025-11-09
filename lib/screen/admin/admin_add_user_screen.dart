@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
 class AdminAddParticipantScreen extends StatefulWidget {
@@ -13,7 +12,8 @@ class AdminAddParticipantScreen extends StatefulWidget {
 
 class _AdminAddParticipantScreenState extends State<AdminAddParticipantScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _firestore = FirebaseFirestore.instance; // used for loading institutes only
+  final _firestore =
+      FirebaseFirestore.instance; // used for loading institutes only
 
   String _email = '';
   String _password = '';
@@ -42,13 +42,15 @@ class _AdminAddParticipantScreenState extends State<AdminAddParticipantScreen> {
     _formKey.currentState!.save();
     if (_selectedInstituteId == null || _selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select institute and role'), backgroundColor: Colors.orange),
+        const SnackBar(
+            content: Text('Select institute and role'),
+            backgroundColor: Colors.orange),
       );
       return;
     }
     setState(() => _isLoading = true);
     try {
-    final callable = FirebaseFunctions.instanceFor(region: 'asia-south1')
+      final callable = FirebaseFunctions.instanceFor(region: 'asia-south1')
           .httpsCallable('createParticipantAccount');
       final result = await callable.call({
         'email': _email.trim(),
@@ -58,12 +60,16 @@ class _AdminAddParticipantScreenState extends State<AdminAddParticipantScreen> {
         'name': '',
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.data['message'] ?? 'Participant created'), backgroundColor: Colors.green),
+        SnackBar(
+            content: Text(result.data['message'] ?? 'Participant created'),
+            backgroundColor: Colors.green),
       );
       Navigator.pop(context);
     } on FirebaseFunctionsException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red, content: Text(e.message ?? 'Cloud Function error')), 
+        SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(e.message ?? 'Cloud Function error')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1,5 +1,6 @@
 import 'package:cs261_project/screen/admin/admin_add_user_screen.dart';
 import 'package:cs261_project/screen/admin/admin_institute_list_screen.dart';
+import 'package:cs261_project/screen/admin/admin_add_alumni_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cs261_project/screen/auth.dart';
@@ -97,6 +98,13 @@ class AdminHomeScreen extends StatelessWidget {
                   Icons.person_add_alt_1,
                   Colors.green,
                   const AdminAddParticipantScreen(),
+                ),
+                _buildActionCard(
+                  context,
+                  "Add Alumni",
+                  Icons.school,
+                  Colors.orange,
+                  AdminAddAlumniScreen(instituteId: instituteId),
                 ),
                 _buildActionCard(
                   context,
