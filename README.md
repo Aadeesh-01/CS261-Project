@@ -22,3 +22,29 @@ Nitin Raj Singh,
 Mehul Mehra, 
 Archan Dave and
 Ayush Bagdai
+
+## Messaging Feature
+
+This app includes a simple 1:1 messaging feature built on Cloud Firestore.
+
+Data model:
+- Collection `chats/{chatId}`
+	- participants: [userId1, userId2]
+	- lastMessageTimestamp: server timestamp (for ordering)
+	- lastMessage: { text, senderId, lastMessageTimestamp }
+	- Subcollection `messages/{messageId}`
+		- senderId, receiverId, text, timestamp
+
+chatId format:
+- Deterministic by sorting two user IDs and joining with `_`, e.g. `userA_userB`.
+
+UI:
+- Inbox lists chats involving the current user ordered by `lastMessageTimestamp`.
+- Chat screen streams messages in descending order and allows sending new messages.
+
+Code:
+- Service: `lib/service/chat_service.dart`
+- Model: `lib/model/message_model.dart`
+- Screens:
+	- Inbox: `lib/screen/message/inbox_screen.dart`
+	- Chat: `lib/screen/message/chat_screen.dart`

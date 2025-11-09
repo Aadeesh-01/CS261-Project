@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class AdminAddParticipantScreen extends StatefulWidget {
   const AdminAddParticipantScreen({super.key});
@@ -12,8 +13,7 @@ class AdminAddParticipantScreen extends StatefulWidget {
 
 class _AdminAddParticipantScreenState extends State<AdminAddParticipantScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
+  final _firestore = FirebaseFirestore.instance; // used for loading institutes only
 
   String _email = '';
   String _password = '';
@@ -40,54 +40,38 @@ class _AdminAddParticipantScreenState extends State<AdminAddParticipantScreen> {
   Future<void> _addParticipant() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
-
-    setState(() => _isLoading = true);
-
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) {
-        throw Exception("You must be logged in as an admin.");
-      }
-
-      final adminDoc = await _firestore
-          .collection('participants')
-          .doc(currentUser.uid)
-          .get();
-
-      if (!adminDoc.exists || adminDoc.data()?['role'] != 'admin') {
-        throw Exception("Only admins can add new participants.");
-      }
-
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _email.trim(),
-        password: _password.trim(),
-      );
-
-      await _firestore
-          .collection('participants')
-          .doc(userCredential.user!.uid)
-          .set({
-        'email': _email,
-        'role': _selectedRole ?? 'student',
-        'instituteId': _selectedInstituteId,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
+    if (_selectedInstituteId == null || _selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.green,
-          content: Text('Participant added successfully!'),
-        ),
+        const SnackBar(content: Text('Select institute and role'), backgroundColor: Colors.orange),
       );
-
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+    final callable = FirebaseFunctions.instanceFor(region: 'asia-south1')
+          .httpsCallable('createParticipantAccount');
+      final result = await callable.call({
+        'email': _email.trim(),
+        'password': _password.trim(),
+        'role': _selectedRole,
+        'instituteId': _selectedInstituteId,
+        'name': '',
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.data['message'] ?? 'Participant created'), backgroundColor: Colors.green),
+      );
       Navigator.pop(context);
+    } on FirebaseFunctionsException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: Colors.red, content: Text(e.message ?? 'Cloud Function error')), 
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(backgroundColor: Colors.red, content: Text(e.toString())),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    setState(() => _isLoading = false);
   }
 
   @override

@@ -46,6 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Create the message data
     final messageData = {
       'senderId': currentUserId,
+      'receiverId': widget.otherUserId,
       'text': text,
       'timestamp': messageTimestamp,
     };
