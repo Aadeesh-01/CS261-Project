@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cs261_project/screen/events_and_news/news_event_screen.dart';
+import 'package:cs261_project/screen/search/search_screen.dart';
+import 'package:cs261_project/screen/opportunities/opportunities_screen.dart';
+import 'package:cs261_project/screen/mentorship/mentorship_screen.dart';
+import 'package:cs261_project/screen/message/inbox_screen.dart';
 
 class MainHomeScreen extends StatefulWidget {
   final String instituteId;
@@ -353,19 +358,39 @@ class _MainHomeScreenState extends State<MainHomeScreen>
               transform: Matrix4.identity()..scale(isSelected ? 0.95 : 1.0),
               child: GestureDetector(
                 onTap: () {
-                  setState(() {
-                    _selectedCardIndex = index;
-                  });
+                  final title = action['title'] as String;
+                  Widget? destination;
+                  if (title == 'Events') {
+                    destination =
+                        NewsEventScreen(instituteId: widget.instituteId);
+                  } else if (title == 'Alumni Network') {
+                    destination = SearchScreen(instituteId: widget.instituteId);
+                  } else if (title == 'Opportunities') {
+                    destination =
+                        OpportunitiesScreen(instituteId: widget.instituteId);
+                  } else if (title == 'Mentorship') {
+                    destination =
+                        MentorshipScreen(instituteId: widget.instituteId);
+                  }
+
+                  if (destination != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => destination!),
+                    );
+                    return;
+                  }
+
+                  // Fallback animation (shouldn't trigger now)
+                  setState(() => _selectedCardIndex = index);
                   Future.delayed(const Duration(milliseconds: 150), () {
-                    setState(() {
-                      _selectedCardIndex = -1;
-                    });
+                    setState(() => _selectedCardIndex = -1);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${action['title']} coming soon'),
+                      const SnackBar(
+                        content: Text('Feature coming soon'),
                         behavior: SnackBarBehavior.floating,
-                        backgroundColor: const Color(0xFF2C3E50),
-                        duration: const Duration(seconds: 2),
+                        backgroundColor: Color(0xFF2C3E50),
+                        duration: Duration(seconds: 2),
                       ),
                     );
                   });
@@ -637,13 +662,33 @@ class _MainHomeScreenState extends State<MainHomeScreen>
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${feature['title']} coming soon'),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: const Color(0xFF2C3E50),
-                      ),
-                    );
+                    final title = feature['title'] as String;
+                    Widget? destination;
+                    if (title == 'Discover Alumni') {
+                      destination =
+                          SearchScreen(instituteId: widget.instituteId);
+                    } else if (title == 'Private Conversations') {
+                      destination =
+                          InboxScreen(instituteId: widget.instituteId);
+                    } else if (title == 'Success Chronicles') {
+                      destination =
+                          NewsEventScreen(instituteId: widget.instituteId);
+                    }
+
+                    if (destination != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => destination!),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Feature coming soon'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Color(0xFF2C3E50),
+                        ),
+                      );
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
