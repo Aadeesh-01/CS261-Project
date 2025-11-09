@@ -28,9 +28,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
+    // Initialize services BEFORE kicking off async loads to avoid late init errors
+    _profileService = ProfileService(instituteId: widget.instituteId);
     _loadInitialData();
     _setupAnimations();
-    _profileService = ProfileService(instituteId: widget.instituteId);
   }
 
   void _setupAnimations() {
@@ -90,8 +91,14 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     final uid = user.uid;
     _userDocumentId = uid;
-
-    await _loadProfile(uid);
+    try {
+      await _loadProfile(uid);
+    } catch (e) {
+      if (mounted) {
+        debugPrint('❌ Failed loading profile for $uid: $e');
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _loadProfile(String uid) async {

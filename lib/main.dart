@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cs261_project/firebase_options.dart';
 import 'package:cs261_project/screen/auth.dart';
 import 'package:cs261_project/screen/splash_screen.dart';
 import 'package:cs261_project/service/user_role_dispatcher.dart';
+import 'package:cs261_project/service/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +17,29 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     print("✅ Firebase initialized successfully!");
+
+    // Request push notification permissions (iOS and Android 13+)
+    final settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+      announcement: false,
+      carPlay: false,
+      criticalAlert: false,
+    );
+    print("🔔 FCM permission status: ${settings.authorizationStatus}");
+
+    // Show notifications while app is in foreground (iOS behavior)
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // Initialize local notifications + FCM listeners
+    await NotificationService().init();
   } catch (e) {
     print("❌ Firebase initialization failed: $e");
   }
@@ -55,6 +80,7 @@ class _MyAppState extends State<MyApp> {
     }
 
     return MaterialApp(
+      navigatorKey: NotificationService.navigatorKey,
       title: 'CS261 Project',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

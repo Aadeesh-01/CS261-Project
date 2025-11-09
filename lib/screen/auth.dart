@@ -300,7 +300,7 @@ class _AuthScreenState extends State<AuthScreen> {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: DropdownButtonFormField<String>(
-        value: _selectedInstituteId,
+        initialValue: _selectedInstituteId,
         items: _institutes
             .map(
               (inst) => DropdownMenuItem<String>(
