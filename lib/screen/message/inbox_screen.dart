@@ -108,9 +108,20 @@ class InboxScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('chats')
             .where('participants', arrayContains: currentUserId)
-            .orderBy('lastMessageTimestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Error loading chats: ${snapshot.error}\nIf this is an index error, create a Firestore composite index on participants (arrayContains) + lastMessageTimestamp (desc).',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+            );
+          }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -134,10 +145,21 @@ class InboxScreen extends StatelessWidget {
               ),
             );
           }
+          // Try to sort client-side if timestamp exists.
+          final sorted = [...chats];
+          sorted.sort((a, b) {
+            final ta = a['lastMessageTimestamp'];
+            final tb = b['lastMessageTimestamp'];
+            if (ta == null && tb == null) return 0;
+            if (ta == null) return 1;
+            if (tb == null) return -1;
+            return (tb as Timestamp).compareTo(ta as Timestamp);
+          });
+
           return ListView.builder(
-            itemCount: chats.length,
+            itemCount: sorted.length,
             itemBuilder: (context, index) {
-              final chat = chats[index];
+              final chat = sorted[index];
               final participants = List<String>.from(chat['participants']);
               final otherUserId =
                   participants.firstWhere((id) => id != currentUserId);
