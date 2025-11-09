@@ -433,6 +433,40 @@ class _ProfileScreenState extends State<ProfileScreen>
                             color: Colors.grey[600],
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.edit_outlined),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFD4AF37),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: () async {
+                              if (_userDocumentId == null) return;
+                              final updated = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProfileEditScreen(
+                                    userDocumentId: _userDocumentId!,
+                                    instituteId: widget.instituteId,
+                                  ),
+                                ),
+                              );
+                              if (updated == true && _userDocumentId != null) {
+                                if (mounted) {
+                                  setState(() => _isLoading = true);
+                                  await _loadProfile(_userDocumentId!);
+                                }
+                              }
+                            },
+                            label: const Text('Create / Update Profile'),
+                          ),
+                        ),
                       ],
                     ),
                   ),

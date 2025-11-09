@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:cs261_project/model/profile_model.dart';
 import 'package:cs261_project/service/profile_service.dart';
-import 'package:cs261_project/screen/student/user_home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -164,6 +163,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
 
       try {
         final profile = Profile(
+          uid: widget.userDocumentId,
           name: nameCtrl.text.trim(),
           rollNo: rollCtrl.text.trim(),
           interest: interestCtrl.text.trim(),
@@ -177,13 +177,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
 
         if (!mounted) return;
 
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => UserHomeScreen(
-                instituteId: widget.instituteId), // Add the parameter
-          ),
-          (route) => false,
-        );
+        // Pop back, telling previous screen to refresh
+        Navigator.of(context).pop(true);
       } catch (e) {
         print("Save error: $e");
         if (mounted) {
