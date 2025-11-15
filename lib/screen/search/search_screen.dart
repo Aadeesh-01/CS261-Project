@@ -37,7 +37,7 @@ class _SearchScreenState extends State<SearchScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _filterSlideAnimation;
 
-  final String indexName = 'alumni_index';
+  final String indexName = 'profiles_index';
   final String historyKey = 'search_history';
 
   @override
@@ -125,6 +125,7 @@ class _SearchScreenState extends State<SearchScreen>
       final results = await AlgoliaService.search(
         queryText: queryText,
         indexName: indexName,
+        instituteId: widget.instituteId,
       );
 
       if (!_searchHistory.contains(queryText)) {

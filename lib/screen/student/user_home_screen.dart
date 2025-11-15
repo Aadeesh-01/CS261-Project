@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cs261_project/screen/profile/profile_screen.dart';
 import 'package:cs261_project/screen/main_home_screen.dart';
+import 'package:cs261_project/service/algolia_service.dart'; // ✅ Added for testing Algolia
 
 class UserHomeScreen extends StatefulWidget {
   final String instituteId;
@@ -64,14 +65,73 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ),
       ),
+
       drawer: _buildModernDrawer(context, user),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: Container(
-          key: ValueKey<int>(_currentIndex),
-          child: pages[_currentIndex],
-        ),
+
+      // ✅ Added Floating Algolia Test Button
+      body: Stack(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Container(
+              key: ValueKey<int>(_currentIndex),
+              child: pages[_currentIndex],
+            ),
+          ),
+
+          // 🧪 Floating Test Button for Algolia API
+          Positioned(
+            bottom: 90,
+            right: 16,
+            child: FloatingActionButton.extended(
+              backgroundColor: Colors.green.shade600,
+              icon: const Icon(Icons.cloud_outlined, color: Colors.white),
+              label: const Text("Test Algolia",
+                  style: TextStyle(color: Colors.white)),
+              onPressed: () async {
+                print("🧪 Running Algolia API Test...");
+                try {
+                  final results = await AlgoliaService.search(
+                    queryText: "Nitin", // 🔍 change to any name for testing
+                    indexName: "profiles_index",
+                    instituteId: widget.instituteId,
+                  );
+
+                  print("✅ Found ${results.length} results");
+                  for (var r in results) {
+                    print("→ ${r['name']} (${r['bio']})");
+                  }
+
+                  if (results.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("No results found for this query."),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Found ${results.length} results ✅"),
+                        backgroundColor: Colors.green.shade600,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  print("❌ Algolia Test Error: $e");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Error: $e"),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        ],
       ),
+
       bottomNavigationBar: _buildBottomNavBar(),
     );
   }
@@ -147,7 +207,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       case 3:
         return 'My Profile';
       case 4:
-        return ' Inbox';
+        return 'Inbox';
       default:
         return 'Alumni Connect';
     }
@@ -172,7 +232,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Avatar with white border
+                // Avatar
                 Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
