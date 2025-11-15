@@ -48,6 +48,21 @@ class ProfileService {
     }
   }
 
+  /// Returns the participant role (e.g., 'student', 'alumni', 'admin') for a UID within this institute.
+  Future<String?> getUserRole(String uid) async {
+    try {
+      final doc = await _participantsCollection.doc(uid).get();
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>?;
+        return data?['role'] as String?;
+      }
+      return null;
+    } catch (e) {
+      print("Error fetching user role: $e");
+      return null;
+    }
+  }
+
   /// ✅ FIX: Efficiently saves/updates profile data using set with merge.
   /// This performs an "upsert" (update if exists, create if not).
   Future<void> saveProfile(String uid, Profile profile) async {

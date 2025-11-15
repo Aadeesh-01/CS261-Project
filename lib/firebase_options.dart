@@ -54,7 +54,8 @@ class DefaultFirebaseOptions {
     appId: '1:38444085565:android:734b4a274d2cb275b95554',
     messagingSenderId: '38444085565',
     projectId: 'project-cs261',
-    storageBucket: 'project-cs261.firebasestorage.app',
+    // Bucket names use the appspot.com domain, not firebasestorage.app
+    storageBucket: 'project-cs261.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -62,7 +63,7 @@ class DefaultFirebaseOptions {
     appId: '1:38444085565:ios:872bb7249ef7f5c2b95554',
     messagingSenderId: '38444085565',
     projectId: 'project-cs261',
-    storageBucket: 'project-cs261.firebasestorage.app',
+    storageBucket: 'project-cs261.appspot.com',
     iosBundleId: 'com.example.cs261Project',
   );
 }

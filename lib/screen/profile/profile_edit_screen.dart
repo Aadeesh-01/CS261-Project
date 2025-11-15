@@ -1,17 +1,24 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:cs261_project/model/profile_model.dart';
 import 'package:cs261_project/service/profile_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cs261_project/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   final String instituteId;
   final String userDocumentId;
-  const ProfileEditScreen(
-      {super.key, required this.userDocumentId, required this.instituteId});
+  final String? role; // optional role hint from caller (participants)
+  const ProfileEditScreen({
+    super.key,
+    required this.userDocumentId,
+    required this.instituteId,
+    this.role,
+  });
 
   @override
   State<ProfileEditScreen> createState() => _ProfileEditScreenState();
@@ -27,11 +34,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
   final TextEditingController interestCtrl = TextEditingController();
   final TextEditingController bioCtrl = TextEditingController();
   final TextEditingController yearCtrl = TextEditingController();
+  // Role specific controllers
+  final TextEditingController companyCtrl = TextEditingController();
+  final TextEditingController positionCtrl = TextEditingController();
+  final TextEditingController cityCtrl = TextEditingController();
+  final TextEditingController linkedinCtrl = TextEditingController();
+  final TextEditingController semesterCtrl = TextEditingController();
+  final TextEditingController branchCtrl = TextEditingController();
 
   bool _isLoading = true;
   bool _isUploading = false;
   bool _isSaving = false;
   String? _profilePicUrl;
+  String? _role; // fetched from profile or user claims later
 
   late AnimationController _animationController;
   late AnimationController _avatarAnimationController;
@@ -45,6 +60,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
 
     // Initialize the service first...
     _profileService = ProfileService(instituteId: widget.instituteId);
+
+    // Seed role from caller if provided (e.g., participants role)
+    _role = widget.role ?? _role;
 
     // ...then you can safely use it.
     _loadProfile();
@@ -108,6 +126,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
         bioCtrl.text = profile.bio ?? '';
         yearCtrl.text = profile.year ?? '';
         _profilePicUrl = profile.picture;
+        _role = profile.role;
+        companyCtrl.text = profile.company ?? '';
+        positionCtrl.text = profile.position ?? '';
+        cityCtrl.text = profile.city ?? '';
+        linkedinCtrl.text = profile.linkedin ?? '';
+        semesterCtrl.text = profile.semester ?? '';
+        branchCtrl.text = profile.branch ?? '';
       });
     }
     if (mounted) {
@@ -127,9 +152,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
       File file = File(pickedFile.path);
       final user = FirebaseAuth.instance.currentUser!;
 
-      final storageRef = FirebaseStorage.instance
-          .ref('profile_pictures/${user.uid}/avatar.jpg');
-      await storageRef.putFile(file);
+      // Use a unique filename per upload to avoid CDN/image cache showing old photo
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      // Explicitly use the configured storage bucket to avoid stale/wrong default bucket
+      final bucket = DefaultFirebaseOptions.currentPlatform.storageBucket;
+      final storage = FirebaseStorage.instanceFor(bucket: bucket);
+      debugPrint('[ImageUpload] Using bucket: ${bucket ?? 'NULL'}');
+      final storageRef =
+          storage.ref('profile_pictures/${user.uid}/avatar_$ts.jpg');
+      await storageRef.putFile(
+        file,
+        SettableMetadata(
+          cacheControl: 'no-cache, max-age=0',
+        ),
+      );
       final downloadUrl = await storageRef.getDownloadURL();
 
       setState(() {
@@ -138,8 +174,31 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
 
       _avatarAnimationController.reset();
       _avatarAnimationController.forward();
-    } catch (e) {
-      print("Failed to upload image: $e");
+    } on FirebaseException catch (e, st) {
+      debugPrint(
+          "[ImageUpload] FirebaseException code=${e.code} message=${e.message}\n$st");
+      String msg = 'Image upload failed';
+      if (e.code == 'permission-denied' || e.code == 'unauthorized') {
+        msg = 'No permission to upload to Storage. Check Firebase rules.';
+      } else if (e.code == 'canceled') {
+        msg = 'Upload canceled';
+      } else if (e.code == 'object-not-found') {
+        msg = 'Storage bucket/path not found';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e, st) {
+      debugPrint("[ImageUpload] Unknown error: $e\n$st");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -159,9 +218,41 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
 
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
+      debugPrint('[ProfileEdit] Save tapped');
+      if (_isUploading) {
+        debugPrint('[ProfileEdit] Blocking save: image still uploading');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please wait for the photo upload to finish'),
+            backgroundColor: Colors.orange[700],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
+      // Ensure role chosen if not coming from caller/profile
+      if (_role == null) {
+        debugPrint('[ProfileEdit] Blocking save: role is null');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please select your role (Student or Alumni)'),
+            backgroundColor: Colors.orange[700],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
       setState(() => _isSaving = true);
+      debugPrint('[ProfileEdit] Validation passed. Starting save...');
 
       try {
+        final sw = Stopwatch()..start();
         final profile = Profile(
           uid: widget.userDocumentId,
           name: nameCtrl.text.trim(),
@@ -171,16 +262,57 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
           year: yearCtrl.text.trim(),
           picture: _profilePicUrl,
           isProfileComplete: true,
+          role: _role,
+          company: _role == 'alumni' ? companyCtrl.text.trim() : null,
+          position: _role == 'alumni' ? positionCtrl.text.trim() : null,
+          city: _role == 'alumni' ? cityCtrl.text.trim() : null,
+          linkedin: _role == 'alumni' ? linkedinCtrl.text.trim() : null,
+          semester: _role == 'student' ? semesterCtrl.text.trim() : null,
+          branch: _role == 'student' ? branchCtrl.text.trim() : null,
         );
 
-        await _profileService.saveProfile(widget.userDocumentId, profile);
+        debugPrint('[ProfileEdit] Calling ProfileService.saveProfile');
+        await _profileService
+            .saveProfile(widget.userDocumentId, profile)
+            .timeout(const Duration(seconds: 8));
+        sw.stop();
 
+        debugPrint(
+            '[ProfileEdit] Save completed in ${sw.elapsedMilliseconds}ms');
         if (!mounted) return;
 
         // Pop back, telling previous screen to refresh
         Navigator.of(context).pop(true);
+        if (sw.elapsedMilliseconds > 1500 && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Profile saved'),
+              backgroundColor: Colors.green[600],
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      } on TimeoutException {
+        debugPrint('[ProfileEdit] TimeoutException while saving');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                  'Saving is taking too long. Check connection and try again.'),
+              backgroundColor: Colors.red[400],
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
       } catch (e) {
-        print("Save error: $e");
+        debugPrint('[ProfileEdit] Save error: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -194,7 +326,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
           );
         }
       } finally {
-        if (mounted) setState(() => _isSaving = false);
+        if (mounted) {
+          setState(() => _isSaving = false);
+          debugPrint('[ProfileEdit] Save finished; _isSaving=false');
+        }
       }
     }
   }
@@ -384,6 +519,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
                       child: _profilePicUrl != null
                           ? Image.network(
                               _profilePicUrl!,
+                              key: ValueKey(_profilePicUrl),
                               fit: BoxFit.cover,
                               width: 120,
                               height: 120,
@@ -432,6 +568,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
     required Color iconColor,
     bool isNumeric = false,
     int maxLines = 1,
+    String? Function(String?)? validator,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -492,201 +629,369 @@ class _ProfileEditScreenState extends State<ProfileEditScreen>
             vertical: 16,
           ),
         ),
-        validator: (value) =>
-            (value == null || value.isEmpty) ? 'Please enter $label' : null,
+        validator: validator ??
+            (value) =>
+                (value == null || value.isEmpty) ? 'Please enter $label' : null,
       ),
+    );
+  }
+
+  Widget _buildRoleSelector() {
+    // If role already known (passed in or loaded from profile) skip selector
+    if (_role != null) return const SizedBox.shrink();
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        Text(
+          'Select Role',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          children: [
+            ChoiceChip(
+              label: const Text('Student'),
+              selected: _role == 'student',
+              avatar: const Icon(Icons.school_outlined, size: 18),
+              onSelected: (v) {
+                if (v) setState(() => _role = 'student');
+              },
+            ),
+            ChoiceChip(
+              label: const Text('Alumni'),
+              selected: _role == 'alumni',
+              avatar: const Icon(Icons.workspace_premium_outlined, size: 18),
+              onSelected: (v) {
+                if (v) setState(() => _role = 'alumni');
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Selecting Student will show Semester & Branch fields. Selecting Alumni shows Company details.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: _isLoading
-          ? Center(
-              child: Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD4AF37).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(
-                      color: Color(0xFFD4AF37),
-                      strokeWidth: 3,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Loading profile...',
-                      style: TextStyle(
-                        color: Color(0xFF2C3E50),
-                        fontWeight: FontWeight.w500,
+    return WillPopScope(
+      onWillPop: () async {
+        // Allow navigating back; if a long save is in-flight, still allow user to exit
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        body: _isLoading
+            ? Center(
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4AF37).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        color: Color(0xFFD4AF37),
+                        strokeWidth: 3,
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 16),
+                      Text(
+                        'Loading profile...',
+                        style: TextStyle(
+                          color: Color(0xFF2C3E50),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            )
-          : FadeTransition(
-              opacity: _fadeAnimation,
-              child: AnimatedBuilder(
-                animation: _slideAnimation,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, _slideAnimation.value),
-                    child: Form(
-                      key: _formKey,
-                      child: CustomScrollView(
-                        slivers: [
-                          SliverAppBar(
-                            expandedHeight: 200,
-                            floating: false,
-                            pinned: true,
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            automaticallyImplyLeading: false,
-                            flexibleSpace: FlexibleSpaceBar(
-                              background: Container(
+              )
+            : FadeTransition(
+                opacity: _fadeAnimation,
+                child: AnimatedBuilder(
+                  animation: _slideAnimation,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(0, _slideAnimation.value),
+                      child: Form(
+                        key: _formKey,
+                        child: CustomScrollView(
+                          slivers: [
+                            SliverAppBar(
+                              expandedHeight: 200,
+                              floating: false,
+                              pinned: true,
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
+                              automaticallyImplyLeading: true,
+                              leading: Container(
+                                margin: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      const Color(0xFF2C3E50).withOpacity(0.05),
-                                      Colors.transparent,
-                                    ],
-                                  ),
+                                  color: Colors.white.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
-                                child: SafeArea(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(24),
-                                    child: Column(
-                                      children: [
-                                        const SizedBox(height: 20),
-                                        _buildHeader(),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back_ios,
+                                    color: Color(0xFF2C3E50),
+                                    size: 18,
+                                  ),
+                                  onPressed: () =>
+                                      Navigator.of(context).maybePop(),
+                                ),
+                              ),
+                              flexibleSpace: FlexibleSpaceBar(
+                                background: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        const Color(0xFF2C3E50)
+                                            .withOpacity(0.05),
+                                        Colors.transparent,
                                       ],
                                     ),
                                   ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                children: [
-                                  _buildProfileAvatar(),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    nameCtrl.text.isNotEmpty
-                                        ? nameCtrl.text
-                                        : 'Your Name',
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2C3E50),
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 40),
-                                  _buildTextField(
-                                    controller: nameCtrl,
-                                    label: 'Full Name',
-                                    icon: Icons.person_outline,
-                                    iconColor: const Color(0xFF6B73FF),
-                                  ),
-                                  _buildTextField(
-                                    controller: rollCtrl,
-                                    label: 'Roll Number',
-                                    icon: Icons.school_outlined,
-                                    iconColor: const Color(0xFF9C88FF),
-                                    isNumeric: true,
-                                  ),
-                                  _buildTextField(
-                                    controller: yearCtrl,
-                                    label: 'Graduation Year',
-                                    icon: Icons.calendar_today_outlined,
-                                    iconColor: const Color(0xFF10AC84),
-                                    isNumeric: true,
-                                  ),
-                                  _buildTextField(
-                                    controller: interestCtrl,
-                                    label: 'Interests & Skills',
-                                    icon: Icons.stars_outlined,
-                                    iconColor: const Color(0xFFFF9F43),
-                                  ),
-                                  _buildTextField(
-                                    controller: bioCtrl,
-                                    label: 'Biography',
-                                    icon: Icons.edit_outlined,
-                                    iconColor: const Color(0xFFD4AF37),
-                                    maxLines: 3,
-                                  ),
-                                  const SizedBox(height: 40),
-                                  Container(
-                                    width: double.infinity,
-                                    height: 56,
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFD4AF37),
-                                          Color(0xFFB8860B)
+                                  child: SafeArea(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(24),
+                                      child: Column(
+                                        children: [
+                                          const SizedBox(height: 20),
+                                          _buildHeader(),
                                         ],
                                       ),
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xFFD4AF37)
-                                              .withOpacity(0.3),
-                                          blurRadius: 15,
-                                          offset: const Offset(0, 8),
-                                        ),
-                                      ],
                                     ),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  children: [
+                                    _buildProfileAvatar(),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      nameCtrl.text.isNotEmpty
+                                          ? nameCtrl.text
+                                          : 'Your Name',
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF2C3E50),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 40),
+                                    // Role selector only if not pre-known
+                                    _buildRoleSelector(),
+                                    _buildTextField(
+                                      controller: nameCtrl,
+                                      label: 'Full Name',
+                                      icon: Icons.person_outline,
+                                      iconColor: const Color(0xFF6B73FF),
+                                    ),
+                                    _buildTextField(
+                                      controller: rollCtrl,
+                                      label: 'Roll Number',
+                                      icon: Icons.school_outlined,
+                                      iconColor: const Color(0xFF9C88FF),
+                                      isNumeric: true,
+                                    ),
+                                    _buildTextField(
+                                      controller: yearCtrl,
+                                      label: 'Graduation Year',
+                                      icon: Icons.calendar_today_outlined,
+                                      iconColor: const Color(0xFF10AC84),
+                                      isNumeric: true,
+                                      validator: (v) {
+                                        if (v == null || v.isEmpty) {
+                                          return 'Enter graduation year';
+                                        }
+                                        final year = int.tryParse(v);
+                                        if (year == null) {
+                                          return 'Enter a valid year';
+                                        }
+                                        const int minYear = 1990;
+                                        final int maxYear =
+                                            DateTime.now().year + 6;
+                                        if (year < minYear || year > maxYear) {
+                                          return 'Year must be between $minYear and $maxYear';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    _buildTextField(
+                                      controller: interestCtrl,
+                                      label: 'Interests & Skills',
+                                      icon: Icons.stars_outlined,
+                                      iconColor: const Color(0xFFFF9F43),
+                                    ),
+                                    _buildTextField(
+                                      controller: bioCtrl,
+                                      label: 'Biography',
+                                      icon: Icons.edit_outlined,
+                                      iconColor: const Color(0xFFD4AF37),
+                                      maxLines: 3,
+                                      validator: (v) {
+                                        if (v == null || v.trim().length < 20) {
+                                          return 'Bio must be at least 20 chars';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    if (_role == 'alumni') ...[
+                                      _buildTextField(
+                                        controller: companyCtrl,
+                                        label: 'Company',
+                                        icon: Icons.business_outlined,
+                                        iconColor: const Color(0xFF6B73FF),
+                                      ),
+                                      _buildTextField(
+                                        controller: positionCtrl,
+                                        label: 'Position',
+                                        icon: Icons.work_outline,
+                                        iconColor: const Color(0xFF9C88FF),
+                                      ),
+                                      _buildTextField(
+                                        controller: cityCtrl,
+                                        label: 'City',
+                                        icon: Icons.location_city_outlined,
+                                        iconColor: const Color(0xFF10AC84),
+                                      ),
+                                      _buildTextField(
+                                        controller: linkedinCtrl,
+                                        label: 'LinkedIn URL',
+                                        icon: Icons.link_outlined,
+                                        iconColor: const Color(0xFFFF9F43),
+                                        validator: (v) {
+                                          if (v == null || v.isEmpty) {
+                                            return null; // optional
+                                          }
+                                          final ok = v.startsWith('http');
+                                          return ok
+                                              ? null
+                                              : 'Must start with http';
+                                        },
+                                      ),
+                                    ] else if (_role == 'student') ...[
+                                      _buildTextField(
+                                        controller: semesterCtrl,
+                                        label: 'Semester',
+                                        icon: Icons.timelapse_outlined,
+                                        iconColor: const Color(0xFF6B73FF),
+                                        validator: (v) {
+                                          if (v == null || v.isEmpty) {
+                                            return 'Enter semester';
+                                          }
+                                          final num = int.tryParse(v);
+                                          if (num == null ||
+                                              num < 1 ||
+                                              num > 12) {
+                                            return '1-12 only';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      _buildTextField(
+                                        controller: branchCtrl,
+                                        label: 'Branch',
+                                        icon: Icons.account_tree_outlined,
+                                        iconColor: const Color(0xFF9C88FF),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 40),
+                                    Container(
+                                      width: double.infinity,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFFD4AF37),
+                                            Color(0xFFB8860B)
+                                          ],
+                                        ),
                                         borderRadius: BorderRadius.circular(16),
-                                        onTap: _isSaving ? null : _saveProfile,
-                                        child: Center(
-                                          child: _isSaving
-                                              ? const SizedBox(
-                                                  width: 24,
-                                                  height: 24,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    color: Colors.white,
-                                                    strokeWidth: 2,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFD4AF37)
+                                                .withOpacity(0.3),
+                                            blurRadius: 15,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          onTap:
+                                              _isSaving ? null : _saveProfile,
+                                          child: Center(
+                                            child: _isSaving
+                                                ? const SizedBox(
+                                                    width: 24,
+                                                    height: 24,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      color: Colors.white,
+                                                      strokeWidth: 2,
+                                                    ),
+                                                  )
+                                                : const Text(
+                                                    'Complete Profile',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.white,
+                                                      letterSpacing: 0.5,
+                                                    ),
                                                   ),
-                                                )
-                                              : const Text(
-                                                  'Complete Profile',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.white,
-                                                    letterSpacing: 0.5,
-                                                  ),
-                                                ),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 40),
-                                ],
+                                    const SizedBox(height: 40),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
+      ),
     );
   }
 }

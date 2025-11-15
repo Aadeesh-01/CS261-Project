@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cs261_project/screen/profile/profile_edit_screen.dart';
 import 'package:cs261_project/model/profile_model.dart';
 import 'package:cs261_project/service/profile_service.dart';
@@ -18,6 +19,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _isLoading = true;
   Profile? _profile;
   String? _userDocumentId;
+  String? _role; // from participants
+  double _completion = 0.0;
+  StreamSubscription<Profile?>? _profileSub; // live updates
+  int _avatarBustToken =
+      DateTime.now().millisecondsSinceEpoch; // forces image refresh
 
   late AnimationController _animationController;
   late AnimationController _avatarAnimationController;
@@ -75,6 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   void dispose() {
+    _profileSub?.cancel();
     _animationController.dispose();
     _avatarAnimationController.dispose();
     super.dispose();
@@ -92,6 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final uid = user.uid;
     _userDocumentId = uid;
     try {
+      await _loadRole(uid);
       await _loadProfile(uid);
     } catch (e) {
       if (mounted) {
@@ -102,13 +110,57 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _loadProfile(String uid) async {
-    final profile = await _profileService.getProfile(uid);
-    if (mounted) {
+    // Use stream subscription for live updates
+    _profileSub?.cancel();
+    _profileSub = _profileService.getProfileStream(uid).listen((profile) {
+      if (!mounted) return;
       setState(() {
         _profile = profile;
+        _completion = _computeCompletion(profile, _role);
         _isLoading = false;
+        // If picture changed, update bust token to force Image.network refresh
+        if (profile?.picture != null) {
+          _avatarBustToken = DateTime.now().millisecondsSinceEpoch;
+        }
       });
+    }, onError: (e) {
+      debugPrint('🔴 profile stream error: $e');
+      if (mounted) setState(() => _isLoading = false);
+    });
+  }
+
+  Future<void> _loadRole(String uid) async {
+    try {
+      _role = await _profileService.getUserRole(uid);
+    } catch (e) {
+      debugPrint('⚠️ Failed to fetch role: $e');
     }
+  }
+
+  double _computeCompletion(Profile? p, String? role) {
+    if (p == null) return 0.0;
+    int total = 5; // base fields
+    int have = 0;
+
+    bool has(String? s) => s != null && s.trim().isNotEmpty;
+
+    if (has(p.name)) have++;
+    if (has(p.year)) have++;
+    if (has(p.interest)) have++;
+    if (has(p.bio) && (p.bio!.trim().length >= 20)) have++;
+    if (has(p.picture)) have++;
+
+    if (role == 'alumni') {
+      total += 2; // minimal alumni-specific
+      if (has(p.company)) have++;
+      if (has(p.position)) have++;
+    } else if (role == 'student') {
+      total += 2;
+      if (has(p.semester)) have++;
+      if (has(p.branch)) have++;
+    }
+
+    return (have / total).clamp(0.0, 1.0);
   }
 
   void _showImageDialog(String imageUrl) {
@@ -142,19 +194,24 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildProfileAvatar() {
     final name = _profile?.name ?? "Distinguished Alumni";
+    // Cache-busted avatar URL
+    String? url = _profile?.picture;
+    if (url != null) {
+      url = url.contains('?')
+          ? '$url&v=$_avatarBustToken'
+          : '$url?v=$_avatarBustToken';
+    }
 
     return ScaleTransition(
       scale: _avatarScaleAnimation,
       child: GestureDetector(
-        onTap: _profile?.picture != null
-            ? () => _showImageDialog(_profile!.picture!)
-            : null,
+        onTap: url != null ? () => _showImageDialog(url!) : null,
         child: Container(
           width: 120,
           height: 120,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: _profile?.picture == null
+            gradient: url == null
                 ? const LinearGradient(
                     colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
                   )
@@ -173,9 +230,10 @@ class _ProfileScreenState extends State<ProfileScreen>
             ],
           ),
           child: ClipOval(
-            child: _profile?.picture != null
+            child: url != null
                 ? Image.network(
-                    _profile!.picture!,
+                    url,
+                    key: ValueKey(url),
                     fit: BoxFit.cover,
                     width: 120,
                     height: 120,
@@ -454,13 +512,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   builder: (_) => ProfileEditScreen(
                                     userDocumentId: _userDocumentId!,
                                     instituteId: widget.instituteId,
+                                    role:
+                                        _role, // pass role so student/alumni fields appear immediately
                                   ),
                                 ),
                               );
                               if (updated == true && _userDocumentId != null) {
+                                // Optimistic completion; stream will deliver fresh data
                                 if (mounted) {
-                                  setState(() => _isLoading = true);
-                                  await _loadProfile(_userDocumentId!);
+                                  setState(() {
+                                    _isLoading =
+                                        false; // keep showing existing data until stream update
+                                  });
                                 }
                               }
                             },
@@ -482,33 +545,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                           slivers: [
                             // Custom App Bar with Hero Profile
                             SliverAppBar(
-                              expandedHeight: 300,
+                              expandedHeight: 280,
                               floating: false,
                               pinned: true,
                               backgroundColor: Colors.transparent,
                               elevation: 0,
-                              leading: Container(
-                                margin: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.arrow_back_ios,
-                                    color: Color(0xFF2C3E50),
-                                    size: 18,
-                                  ),
-                                  onPressed: () => Navigator.of(context).pop(),
-                                ),
-                              ),
+                              automaticallyImplyLeading: false,
                               actions: [
                                 Container(
                                   margin: const EdgeInsets.all(8),
@@ -532,25 +574,23 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     onPressed: () async {
                                       if (_userDocumentId == null) return;
 
-                                      final updated =
-                                          await Navigator.push<bool>(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    ProfileEditScreen(
-                                                  userDocumentId:
-                                                      _userDocumentId!,
-                                                  instituteId: widget
-                                                      .instituteId, // Add this line
-                                                ),
-                                              ));
+                                      final updated = await Navigator.push<
+                                              bool>(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ProfileEditScreen(
+                                              userDocumentId: _userDocumentId!,
+                                              instituteId: widget.instituteId,
+                                              // pass role for conditional fields
+                                              // if role unknown, editor can still work with base fields
+                                              role: _role,
+                                            ),
+                                          ));
 
                                       if (updated == true &&
                                           _userDocumentId != null) {
-                                        if (mounted) {
-                                          setState(() => _isLoading = true);
-                                          await _loadProfile(_userDocumentId!);
-                                        }
+                                        // We rely on stream; optimistic UI
+                                        if (mounted) setState(() {});
                                       }
                                     },
                                   ),
@@ -573,49 +613,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const SizedBox(height: 60),
+                                      const SizedBox(height: 16),
                                       _buildProfileAvatar(),
-                                      const SizedBox(height: 20),
+                                      const SizedBox(height: 16),
                                       Text(
                                         _profile?.name ?? "Your Name",
                                         style: const TextStyle(
-                                          fontSize: 28,
+                                          fontSize: 26,
                                           fontWeight: FontWeight.w300,
                                           color: Colors.white,
-                                          letterSpacing: 1.2,
+                                          letterSpacing: 1.1,
                                         ),
                                         textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFD4AF37)
-                                              .withOpacity(0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                          border: Border.all(
-                                            color: const Color(0xFFD4AF37)
-                                                .withOpacity(0.5),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _profile?.year != null &&
-                                                  _profile!.year!.isNotEmpty
-                                              ? "Class of ${_profile!.year}"
-                                              : "Student Profile",
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color:
-                                                Colors.white.withOpacity(0.9),
-                                            fontWeight: FontWeight.w500,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
                                       ),
                                     ],
                                   ),
@@ -630,6 +639,96 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    // Moved progress + year/role chip below header to prevent overflow
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 24),
+                                      child: Column(
+                                        children: [
+                                          LinearProgressIndicator(
+                                            value: _completion,
+                                            color: const Color(0xFFD4AF37),
+                                            backgroundColor: Colors.grey[300],
+                                            minHeight: 6,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 14,
+                                                  vertical: 6,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFD4AF37)
+                                                      .withOpacity(0.15),
+                                                  borderRadius:
+                                                      BorderRadius.circular(18),
+                                                  border: Border.all(
+                                                    color:
+                                                        const Color(0xFFD4AF37)
+                                                            .withOpacity(0.4),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  _profile?.year != null &&
+                                                          _profile!
+                                                              .year!.isNotEmpty
+                                                      ? (_role == 'student'
+                                                          ? 'Graduation Year: ${_profile!.year}'
+                                                          : _role == 'alumni'
+                                                              ? 'Class of ${_profile!.year}'
+                                                              : _profile!.year!)
+                                                      : (_role == 'student'
+                                                          ? 'Graduation Year'
+                                                          : _role == 'alumni'
+                                                              ? 'Alumni'
+                                                              : 'Profile'),
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color:
+                                                        const Color(0xFF2C3E50)
+                                                            .withOpacity(0.85),
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Text(
+                                                'Completion: ${(_completion * 100).round()}%',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey[700],
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (_role != null)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 12),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.verified_user,
+                                                size: 18,
+                                                color: Color(0xFFD4AF37)),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Role: ${_role!}',
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.w600),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     // Personal Information Section
                                     _buildSectionTitle('Personal Details'),
                                     const SizedBox(height: 20),
@@ -654,6 +753,46 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       Icons.stars_outlined,
                                       const Color(0xFFFF9F43),
                                     ),
+
+                                    if (_role == 'alumni') ...[
+                                      _buildInfoCard(
+                                        'Company',
+                                        _profile?.company,
+                                        Icons.business_outlined,
+                                        const Color(0xFF6B73FF),
+                                      ),
+                                      _buildInfoCard(
+                                        'Position',
+                                        _profile?.position,
+                                        Icons.work_outline,
+                                        const Color(0xFF9C88FF),
+                                      ),
+                                      _buildInfoCard(
+                                        'City',
+                                        _profile?.city,
+                                        Icons.location_city_outlined,
+                                        const Color(0xFF10AC84),
+                                      ),
+                                      _buildInfoCard(
+                                        'LinkedIn',
+                                        _profile?.linkedin,
+                                        Icons.link_outlined,
+                                        const Color(0xFFFF9F43),
+                                      ),
+                                    ] else if (_role == 'student') ...[
+                                      _buildInfoCard(
+                                        'Semester',
+                                        _profile?.semester,
+                                        Icons.timelapse_outlined,
+                                        const Color(0xFF6B73FF),
+                                      ),
+                                      _buildInfoCard(
+                                        'Branch',
+                                        _profile?.branch,
+                                        Icons.account_tree_outlined,
+                                        const Color(0xFF9C88FF),
+                                      ),
+                                    ],
 
                                     const SizedBox(height: 32),
 

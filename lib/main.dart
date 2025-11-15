@@ -3,11 +3,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_storage/firebase_storage.dart' as storage;
 import 'package:cs261_project/firebase_options.dart';
 import 'package:cs261_project/screen/auth.dart';
 import 'package:cs261_project/screen/splash_screen.dart';
 import 'package:cs261_project/service/user_role_dispatcher.dart';
 import 'package:cs261_project/service/notification_service.dart';
+import 'package:cs261_project/widget/connectivity_banner.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +42,26 @@ Future<void> main() async {
 
     // Initialize local notifications + FCM listeners
     await NotificationService().init();
+    // Debug: print resolved storage bucket to verify configuration
+    try {
+      final defaultBucket = storage.FirebaseStorage.instance.bucket;
+      print('🪣 Default Storage bucket: ' + defaultBucket);
+      final explicitBucket =
+          DefaultFirebaseOptions.currentPlatform.storageBucket;
+      final storageFor =
+          storage.FirebaseStorage.instanceFor(bucket: explicitBucket);
+      print('🪣 Explicit Storage bucket: ${storageFor.bucket}');
+      // Optional lightweight probe: list root (should succeed or give permission error, not bucket-not-found)
+      try {
+        await storageFor.ref().list(const storage.ListOptions(maxResults: 1));
+        print('✅ Storage probe succeeded for bucket: ${storageFor.bucket}');
+      } on storage.FirebaseException catch (e) {
+        print(
+            '🔎 Storage probe FirebaseException: code=${e.code} message=${e.message}');
+      }
+    } catch (e) {
+      print('⚠️ Could not resolve Firebase Storage buckets: $e');
+    }
   } catch (e) {
     print("❌ Firebase initialization failed: $e");
   }
@@ -85,6 +107,9 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+      ),
+      builder: (context, child) => ConnectivityBanner(
+        child: child ?? const SizedBox.shrink(),
       ),
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
